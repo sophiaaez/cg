@@ -88,7 +88,7 @@ void OGLWidget::initializeGL()
     glClearColor(0,0,0,0); //HIER AENDERUNG 0 0 0 1
     glClear (GL_COLOR_BUFFER_BIT);
     glColor3f (1.0, 1.0, 1.0);
-    glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+    //glOrtho (0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 
     /**glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -121,7 +121,8 @@ void OGLWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-    glOrtho(-10,10,-10,10,-100,100);
+    //glOrtho(-10,10,-10,10,-100,100);
+    glFrustum(-5,+5,-5,+5,5,50);
     glTranslatef(.0,.0,-5);
 
     // Apply rotation angles
@@ -141,7 +142,7 @@ void OGLWidget::paintGL()
     //glRotatef(90,1,0,0);
     glRotatef(270,0,1,0);
     glTranslatef(7,0,4);
-    //paintFlipperArm(1,3,1);
+    paintFlipperArm(1,3,1);
     glTranslatef(-7,0,-4);
     glRotatef(90,0,1,0);
     //glRotatef(330,1,0,0);
