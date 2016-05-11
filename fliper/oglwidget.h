@@ -57,8 +57,10 @@ protected:
     double dyN;
     std::vector<float> vX;
     std::vector<float> vY;
-    double ox, oz, vx, vz, ax, az = 0;
+    double ox, oz, vx, vz, ax, az;
     boolean perspective;
+    double cy_x, cy_z, cu_x, cu_z;
+    boolean done;
 
 protected:
     int rotx;       // Rotation angles (0..360)
@@ -76,6 +78,8 @@ protected:
     void paintCircle(float r, int alpha);
     void paintTriangle(float r, int alpha);
     void paintFlipperArm(float w, float l, float h);
+    void paintSquare(float s);
+    void paintCube(float s);
 };
 
 

@@ -19,6 +19,11 @@ OGLWidget::OGLWidget(QWidget *parent)
     zoom = 100;
     ox, oz, vx, vz, ax, az = 0;
     perspective = true;
+    cy_x = 0;
+    cy_z = 0;
+    cu_x = -3;
+    cu_z = -4;
+    done = false;
 
 
 }
@@ -110,16 +115,26 @@ void OGLWidget::paintGL()
     glScalef( scale, scale, scale ); // Scale along all axis
 
 
+
     glRotatef(30,1,0,0);
     paintTable(10,14);
     glTranslatef(5,0,7);
-    //glRotatef(90,0,0,1);
-    //glRotatef(90,1,0,0);
+
     glRotatef(270,0,1,0);
     glTranslatef(7,0,4);
     paintFlipperArm(1,3,1);
     glTranslatef(-7,0,-4);
     glRotatef(90,0,1,0);
+    glTranslatef(-5,0,0); //Mittelpunkt der Tischplatte ist 0/0 in x/z ebene
+    //glColor3f(0.75,0,0.1);
+    glTranslatef(cy_x, 0, cy_z);
+    paintCylinder(0.7, 1.5);
+    glTranslatef(-cy_x, 0, -cy_z);
+    glColor3f(0.5,0,0.5);
+    glTranslatef(cu_x, 0, cu_z);
+    paintCube(1);
+    glTranslatef(-cu_x, 0, -cu_z);
+
     //glRotatef(330,1,0,0);
 
     //glRotatef(270,1,0,0);
@@ -136,7 +151,7 @@ void OGLWidget::paintGL()
    // glRotatef(a, 0.0f, 0.0f, 1.0f); // Rotate by a degrees around z axis
     glScalef(0.5,0.5,0.5);
     glColor3f(0.75,0,0.1);
-    drawSphere(a,35,35);
+    //drawSphere(a,35,35);
     glPopMatrix();
 
     //dx = (dx+dxN)*(0.5);
@@ -146,7 +161,7 @@ void OGLWidget::paintGL()
         vz = -vz;
     }**/
 
-    if(-6.5 < ox+vx*0.1 && ox+vx*0.1 <2.5){
+    if(-5 < ox+vx*0.1 && ox+vx*0.1 <5){
 
     }else{
         vx = -vx;
@@ -218,30 +233,51 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
 
     switch(event->key())
     {
-        // Up/Down: Rotating around x axis
         case Qt::Key_Up:
-
-            emit changeRotation( keyDelta, 0, 0 );
+            if(!done && cy_z-0.5 > -6.65){
+                cy_z -= 0.5;
+            }
             break;
         case Qt::Key_Down:
-            emit changeRotation( -keyDelta, 0, 0 );
+            if(!done&& cy_z+0.5 < 6.65 ){
+                cy_z += 0.5;
+            }
             break;
-
-        // Left/Right: Rotating around y axis
         case Qt::Key_Left:
-            emit changeRotation( 0, keyDelta, 0 );
+            if(!done){
+                cy_x -= 0.5;
+            }
             break;
         case Qt::Key_Right:
-            emit changeRotation( 0, -keyDelta, 0 );
+            if(!done){
+                cy_x += 0.5;
+            }
             break;
-
-        // Pg up/down: Rotating around z axis
-        case Qt::Key_PageUp:
-            emit changeRotation( 0, 0, keyDelta );
+        case Qt::Key_E:
+            if(!done){
+                cu_z -= 0.5;
+            }
             break;
-        case Qt::Key_PageDown:
-            emit changeRotation( 0, 0, -keyDelta );
+        case Qt::Key_D:
+            if(!done){
+                cu_z += 0.5;
+            }
             break;
+        case Qt::Key_S:
+            if(!done){
+                cu_x -= 0.5;
+            }
+            break;
+        case Qt::Key_F:
+            if(!done){
+                cu_x += 0.5;
+            }
+            break;
+        case Qt::Key_Return:
+            if(!done){
+                done = true;
+            }
+        break;
         case Qt::Key_P:
             perspective = !perspective;
             break;
@@ -356,7 +392,7 @@ void OGLWidget::paintFlipperArm(float w, float l, float h){
 }
 
 void OGLWidget::paintTable(float w, float h){
-    glColor3f(0,0.5,1);
+    glColor3f(0,0.1,1);
     paintRectangle(w, 0.5);
     glRotatef(90, 0,1,0);
     glTranslatef(0.5*h,0,0.5*w);
@@ -371,6 +407,7 @@ void OGLWidget::paintTable(float w, float h){
     glTranslatef(h,0,w);
     glRotatef(90,0,1,0);
     glRotatef(90, 1,0,0);
+    glColor3f(0,0.5,1);
     paintRectangle(w,h);
     //glTranslatef(-h,0,-w);
     glRotatef(270,1,0,0);
@@ -394,4 +431,36 @@ void OGLWidget::paintRectangle(float w, float h){
         glVertex3f(0.5*w,h,0);
         glVertex3f(-0.5*w,h,0);
     glEnd();
+}
+
+void OGLWidget::paintSquare(float s){
+    glBegin(GL_QUADS);
+        glNormal3f(0,0,1);
+        glVertex3f(0,0,0);
+        glVertex3f(s,0,0);
+        glVertex3f(s,s,0);
+        glVertex3f(0,s,0);
+    glEnd();
+}
+
+
+void OGLWidget::paintCube(float s){
+        paintSquare(s);
+        glRotatef(90,0,1,0);
+        paintSquare(s);
+        glTranslatef(s,0,s);
+        glRotatef(90,0,1,0);
+        paintSquare(s);
+        glRotatef(90,0,1,0);
+        paintSquare(s);
+        glRotatef(180,0,1,0);
+        glTranslatef(-s,0,-s);
+        glRotatef(270,0,1,0);
+        glRotatef(90,1,0,0);
+        glTranslatef(0,-s,0);
+        paintSquare(s);
+        glTranslatef(0,0,-s);
+        paintSquare(s);
+        glTranslatef(0,s,s);
+        glRotatef(270,1,0,0);
 }
