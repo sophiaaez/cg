@@ -58,6 +58,7 @@ protected:
     std::vector<float> vX;
     std::vector<float> vY;
     double ox, oz, vx, vz, ax, az = 0;
+    boolean perspective;
 
 protected:
     int rotx;       // Rotation angles (0..360)

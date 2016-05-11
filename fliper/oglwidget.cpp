@@ -18,7 +18,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     rotz = 0;
     zoom = 100;
     ox, oz, vx, vz, ax, az = 0;
-
+    perspective = true;
 
 
 }
@@ -70,13 +70,6 @@ void OGLWidget::initializeGL()
 {
     initializeOpenGLFunctions();
 
-   // glClearColor(0,0,0,1);
-    //glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_COLOR_MATERIAL);
-    //glEnable(GL_LIGHT0);
-    //glEnable(GL_LIGHTING);
-    //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-
     // For wireframe replace GL_FILL with GL_LINE
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
@@ -88,28 +81,6 @@ void OGLWidget::initializeGL()
     glClearColor(0,0,0,0); //HIER AENDERUNG 0 0 0 1
     glClear (GL_COLOR_BUFFER_BIT);
     glColor3f (1.0, 1.0, 1.0);
-    //glOrtho (0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-
-    /**glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glShadeModel(GL_SMOOTH);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-    glEnable(GL_LIGHTING);
-
-    glLightfv(GL_LIGHT1, GL_POSITION, lp1);
-    glLightfv(GL_LIGHT1, GL_DIFFUSE,  red);
-    glLightfv(GL_LIGHT1, GL_SPECULAR, red);
-    glEnable(GL_LIGHT1);
-
-    glLightfv(GL_LIGHT2, GL_POSITION, lp2);
-    glLightfv(GL_LIGHT2, GL_DIFFUSE,  green);
-    glLightfv(GL_LIGHT2, GL_SPECULAR, green);
-    glEnable(GL_LIGHT2);
-
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    glEnable(GL_COLOR_MATERIAL);
-**/
 
 
 }
@@ -121,8 +92,12 @@ void OGLWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-    //glOrtho(-10,10,-10,10,-100,100);
-    glFrustum(-5,+5,-5,+5,5,50);
+    if(perspective){
+        glOrtho(-10,10,-10,10,-100,100);
+    }else{
+        glFrustum(-5,+5,-5,+5,5,50);
+    }
+
     glTranslatef(.0,.0,-5);
 
     // Apply rotation angles
@@ -267,7 +242,9 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
         case Qt::Key_PageDown:
             emit changeRotation( 0, 0, -keyDelta );
             break;
-
+        case Qt::Key_P:
+            perspective = !perspective;
+            break;
         // All other will be ignored
         default:
             break;
