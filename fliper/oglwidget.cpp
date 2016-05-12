@@ -24,6 +24,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     cu_x = -3;
     cu_z = -4;
     done = false;
+    up = false;
 
 
 }
@@ -117,7 +118,7 @@ void OGLWidget::paintGL()
 
 
     glRotatef(30,1,0,0);
-    paintTable(10,14);
+    paintTable(10,14, 3);
     glTranslatef(5,0,7);
 
     glRotatef(270,0,1,0);
@@ -128,30 +129,25 @@ void OGLWidget::paintGL()
     glTranslatef(-5,0,0); //Mittelpunkt der Tischplatte ist 0/0 in x/z ebene
     //glColor3f(0.75,0,0.1);
     glTranslatef(cy_x, 0, cy_z);
-    paintCylinder(0.7, 1.5);
+    paintCylinder(0.6, 1);
     glTranslatef(-cy_x, 0, -cy_z);
     glColor3f(0.5,0,0.5);
     glTranslatef(cu_x, 0, cu_z);
     paintCube(1);
     glTranslatef(-cu_x, 0, -cu_z);
 
-    //glRotatef(330,1,0,0);
 
-    //glRotatef(270,1,0,0);
-    //glRotatef(90,0,1,0);
     glPushMatrix();
-    glTranslatef(-3,0.5, 0);
-    glScalef(0.5,0.5,0.5);
 
-    /**glTranslatef(-5,0,0);
-    drawSphere(1,35,35);
-    glTranslatef(5,0,0);**/
+    glScalef(0.5,0.5,0.5);
     glScalef(2,2,2);
     glTranslatef(ox, 0, oz);
-   // glRotatef(a, 0.0f, 0.0f, 1.0f); // Rotate by a degrees around z axis
+
     glScalef(0.5,0.5,0.5);
     glColor3f(0.75,0,0.1);
-    //drawSphere(a,35,35);
+    drawSphere(a,35,35);
+    glScalef(2,2,2);
+    glTranslatef(-ox,0,-oz);
     glPopMatrix();
 
     //dx = (dx+dxN)*(0.5);
@@ -161,13 +157,13 @@ void OGLWidget::paintGL()
         vz = -vz;
     }**/
 
-    if(-5 < ox+vx*0.1 && ox+vx*0.1 <5){
+    if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){
 
     }else{
         vx = -vx;
         //ax = -ax;
     }
-    if(-7 < oz+vz*0.1 && oz+vz*0.1 <7){
+    if(-6.5 < oz+vz*0.1 && oz+vz*0.1 <6.5){
 
     }else{
         vz = 0;
@@ -197,6 +193,7 @@ void OGLWidget::mousePressEvent(QMouseEvent *event)
 
 void OGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+    done = true;
     dxN = event->x() -lastpos.x();
     dyN = event->y() -lastpos.y();
     //while(dx == event->x() -lastpos.x() && dy == event->y() -lastpos.y()){
@@ -234,48 +231,54 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
     switch(event->key())
     {
         case Qt::Key_Up:
-            if(!done && cy_z-0.5 > -6.65){
-                cy_z -= 0.5;
+            if(!done && cy_z-0.1 > -6.4){
+                cy_z -= 0.1;
             }
             break;
         case Qt::Key_Down:
-            if(!done&& cy_z+0.5 < 6.65 ){
-                cy_z += 0.5;
+            if(!done&& cy_z+0.1 < 6.4){
+                cy_z += 0.1;
             }
             break;
         case Qt::Key_Left:
-            if(!done){
-                cy_x -= 0.5;
+            if(!done&& cy_x-0.1 > -4.5){
+                cy_x -= 0.1;
             }
             break;
         case Qt::Key_Right:
-            if(!done){
-                cy_x += 0.5;
+            if(!done&& cy_x+0.1 < 4.5){
+                cy_x += 0.1;
             }
             break;
         case Qt::Key_E:
-            if(!done){
-                cu_z -= 0.5;
+            if(!done&& cu_z-0.1 > -6){
+                cu_z -= 0.1;
             }
             break;
         case Qt::Key_D:
-            if(!done){
-                cu_z += 0.5;
+            if(!done&& cu_z+0.1 < 7){
+                cu_z += 0.1;
             }
             break;
         case Qt::Key_S:
-            if(!done){
-                cu_x -= 0.5;
+            if(!done&& cu_x-0.1 > -5){
+                cu_x -= 0.1;
             }
             break;
         case Qt::Key_F:
-            if(!done){
-                cu_x += 0.5;
+            if(!done&& cu_x+0.1 < 4.1){
+                cu_x += 0.1;
             }
             break;
         case Qt::Key_Return:
             if(!done){
                 done = true;
+            }
+        break;
+        case Qt::Key_Space:
+            if(!up){
+                up = true;
+                //positionsaenderung fuer flipperarm
             }
         break;
         case Qt::Key_P:
@@ -391,7 +394,7 @@ void OGLWidget::paintFlipperArm(float w, float l, float h){
       //glTranslatef(h,0,0);
 }
 
-void OGLWidget::paintTable(float w, float h){
+void OGLWidget::paintTable(float w, float h, float a){
     glColor3f(0,0.1,1);
     paintRectangle(w, 0.5);
     glRotatef(90, 0,1,0);
@@ -409,8 +412,38 @@ void OGLWidget::paintTable(float w, float h){
     glRotatef(90, 1,0,0);
     glColor3f(0,0.5,1);
     paintRectangle(w,h);
-    //glTranslatef(-h,0,-w);
     glRotatef(270,1,0,0);
+    glColor3f(0,0.1,1);
+    glTranslatef(0,0,0.5*h);
+    glBegin(GL_QUADS);
+        glVertex3f(0.5*a,0,0.5*h-0.5);
+        glVertex3f(0.5*a,0.5,0.5*h-0.5);
+        glVertex3f(0.5*w,0.5,0.5*h-0.75*a);
+        glVertex3f(0.5*w,0,0.5*h-0.75*a);
+        glNormal3f(0.5-0.75*a,0,-0.5*w+0.5*a);
+    glEnd();
+    glBegin(GL_QUADS);
+        glVertex3f(0.5*a,0.5,0.5*h-0.5);
+        glVertex3f(0.5*a,0.5,0.5*h);
+        glVertex3f(0.5*w,0.5,0.5*h);
+        glVertex3f(0.5*w,0.5,0.5*h-0.75*a);
+        glNormal3f(0,1,0);
+     glEnd();
+     glBegin(GL_QUADS);
+         glVertex3f(-0.5*a,0,0.5*h-0.5);
+         glVertex3f(-0.5*a,0.5,0.5*h-0.5);
+         glVertex3f(-0.5*w,0.5,0.5*h-0.75*a);
+         glVertex3f(-0.5*w,0,0.5*h-0.75*a);
+         glNormal3f(0.5-0.75*a,0,0.5*w+0.5*a);
+     glEnd();
+     glBegin(GL_QUADS);
+         glVertex3f(-0.5*a,0.5,0.5*h-0.5);
+         glVertex3f(-0.5*a,0.5,0.5*h);
+         glVertex3f(-0.5*w,0.5,0.5*h);
+         glVertex3f(-0.5*w,0.5,0.5*h-0.75*a);
+         glNormal3f(0,1,0);
+     glEnd();
+     glTranslatef(0,0,-0.5*h);
 }
 
 void OGLWidget::paintRectangle(float r, float h, int alpha){

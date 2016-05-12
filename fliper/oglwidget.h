@@ -61,6 +61,7 @@ protected:
     boolean perspective;
     double cy_x, cy_z, cu_x, cu_z;
     boolean done;
+    boolean up;
 
 protected:
     int rotx;       // Rotation angles (0..360)
@@ -71,7 +72,7 @@ protected:
     boolean drawable;
     QPoint lastpos; // Last position of mouse pressed, used for dragging
     void drawSphere(double r, int lats, int longs);
-    void paintTable(float w, float h);
+    void paintTable(float w, float h, float a);
     void paintRectangle(float w, float h);
     void paintRectangle(float w, float h, int alpha);
     void paintCylinder(float r, float h);
