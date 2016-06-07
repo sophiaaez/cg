@@ -76,7 +76,7 @@ protected:
     void paintRectangle(float w, float h);
     void paintRectangle(float w, float h, int alpha);
     void paintCylinder(float r, float h);
-    void paintCircle(float r, int alpha);
+    void paintCircle(float r, int alpha, int y);
     void paintTriangle(float r, int alpha);
     void paintFlipperArm(float w, float l, float h);
     void paintSquare(float s);

@@ -1,5 +1,5 @@
 #include "oglwidget.h"
-
+#include "iostream"
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
@@ -104,8 +104,6 @@ void OGLWidget::paintGL()
         glFrustum(-5,+5,-5,+5,5,50);
     }
 
-    glTranslatef(.0,.0,-5);
-
     // Apply rotation angles
     glRotatef(rotx, 1.0f, 0.0f, 0.0f); // Rotate around x axis
     glRotatef(roty, 0.0f, 1.0f, 0.0f); // Rotate around y axis
@@ -119,15 +117,13 @@ void OGLWidget::paintGL()
 
     glRotatef(30,1,0,0);
     paintTable(10,14, 3);
-    glTranslatef(5,0,7);
-
+    glColor3f(0,1,0);
+    glTranslatef(1,0,7);
     glRotatef(270,0,1,0);
-    glTranslatef(7,0,4);
     paintFlipperArm(1,3,1);
-    glTranslatef(-7,0,-4);
     glRotatef(90,0,1,0);
-    glTranslatef(-5,0,0); //Mittelpunkt der Tischplatte ist 0/0 in x/z ebene
-    //glColor3f(0.75,0,0.1);
+    glTranslatef(-1,0,-7);
+    glColor3f(0.75,0,0.1);
     glTranslatef(cy_x, 0, cy_z);
     paintCylinder(0.6, 1);
     glTranslatef(-cy_x, 0, -cy_z);
@@ -152,10 +148,7 @@ void OGLWidget::paintGL()
 
     //dx = (dx+dxN)*(0.5);
     //dy = (dy+dyN)*(0.5);
-   /** if(-5 < ox+vx*0.1 && ox+vx*0.1 <5 && -7 < oz+vz*0.1 && oz+vz*0.1 <7){
-        vx = -vx;
-        vz = -vz;
-    }**/
+
 
     if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){
 
@@ -169,7 +162,17 @@ void OGLWidget::paintGL()
         vz = 0;
         az = 0;
     }
-    //vx = vx - ax * 0.1;
+    if(done && cu_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +0.5 && cu_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 0.5){
+        //Zusammenstoß mit Cube eventuell
+    }
+    if(done && cy_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cy_x +0.5 && cy_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cy_z + 0.5){
+        //Zusammenstoß mit Cylinder eventuell
+    }
+
+    //TODO if mit kollision jeder bande, vx und cz in geraden vektoren ändern :)
+
+    //TODO hier richtige schwerkraft einbauen
+    vx = vx - ax * 0.1;
     vz = vz + az * 0.1;
     ox = ox + vx * 0.1;
     oz = oz + vz * 0.1;
@@ -251,7 +254,7 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
             }
             break;
         case Qt::Key_E:
-            if(!done&& cu_z-0.1 > -6){
+            if(!done&& cu_z-0.1 > -7){
                 cu_z -= 0.1;
             }
             break;
@@ -322,25 +325,111 @@ void OGLWidget::drawSphere(double r, int lats, int longs) {
 void OGLWidget::paintCylinder(float r, float h){
     int alpha = 1;
     int amount = 360/alpha;
+    int x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, nx, ny, nz, v1x, v1y, v1z, v2x, v2y, v2z, xp, yp, zp;
+    /**x1 = cos(0)*r;
+    x2 = cos(alpha)*r;
+    x3 = x2;
+    x4 = x1;
+    y1 = 0;
+    y2 = y1;
+    y3 = h;
+    y4 = y3;
+    z1 = 0;
+    z2 = sin(alpha)*r;
+    z3 = z2;
+    z4 = z3;
+    z2 = z1;*/
+    paintCircle(r, alpha, 0);
+    glTranslatef(0,h,0);
+    paintCircle(r, alpha, h);
+    glTranslatef(0,-h,0);
     for(int i = 0; i < amount; i++){
+        /**glBegin(GL_QUADS);
+            glVertex3f(x1,y1,z1);
+            glVertex3f(x2,y2,z2);
+            glVertex3f(x3,y3,z3);
+            glVertex3f(x4,y4,z4);
+            glNormal3f(nx,ny,nz);
+        glEnd();
+        //rotationsmatrix anwenden
+        xp = cos(alpha)*x1 + 0*y1 + sin(alpha)*z1;
+        yp = 0*x1 + 1*y1 + 0*z1;
+        zp = (-sin(alpha))*x1 + 0*y1 + cos(alpha)*z1;
+        x1 = xp;
+        y1 = yp;
+        z1 = zp;
+
+        xp = cos(alpha)*x2 + 0*y2 + sin(alpha)*z2;
+        yp = 0*x2 + 1*y2 + 0*z2;
+        zp = (-sin(alpha))*x2 + 0*y2 + cos(alpha)*z2;
+        x2 = xp;
+        y2 = yp;
+        z2 = zp;
+
+        x3 = cos(alpha)*x3 + 0*y3 + sin(alpha)*z3;
+        y3 = 0*x3 + 1*y3 + 0*z3;
+        z3 = (-sin(alpha))*x3 + 0*y3 + cos(alpha)*z3;
+        x3 = xp;
+        y3 = yp;
+        z4 = zp;
+
+        x4 = cos(alpha)*x4 + 0*y4 + sin(alpha)*z4; 
+        y4 = 0*x4 + 1*y4 + 0*z4;
+        z4 = (-sin(alpha))*x4 + 0*y4 + cos(alpha)*z4;
+        x4 = xp;
+        y4 = yp;
+        z4 = zp;
+
+        v1x = x1 + (x2 - x1);
+        v2x = x1 + (x3 - x1);
+        v1y = y1 + (y2 - y1);
+        v2y = y1 + (y3 - y1);
+        v1z = z1 + (z2 - z1);
+        v2z = z1 + (z3 - z1);
+
+        nx = v1y*v2z - v2y*v1z;
+        ny = v1z*v2x - v2z*v1x;
+        nz = v1x*v2y - v2x*v1y;**/
+
         paintTriangle(r, alpha);
         paintRectangle(r, h, alpha);
         glRotatef(alpha * 1.0, 0.0,1.0,0.0);
     }
     //glRotatef(alpha,0,1,0);
-    glTranslatef(0,h,0);
-    for(int i = 0; i < amount; i++){
-        paintTriangle(r, alpha);
-        glRotatef(alpha, 0, 1, 0);
-    }
-    glTranslatef(0,-h,0);
+    //glTranslatef(0,h,0);
+    //for(int i = 0; i < amount; i++){
+    //  paintTriangle(r, alpha);
+    //    glRotatef(alpha, 0, 1, 0);
+    //}
+    //glTranslatef(0,-h,0);
     //glRotatef(alpha,0,1,0);
 
 }
 
-void OGLWidget::paintCircle(float r, int alpha){
+void OGLWidget::paintCircle(float r, int alpha, int y){ //Wahrscheinlicher fehler alpha in bogen oder gradmaß, das was halt falsch ists
     int amount = 360/alpha;
+    alpha = alpha/360 * 2 * M_PI;
+    int x1, x2, z1, z2;
+    x1 = r;
+    //x2 = cos(alpha)*r;
+    z1 = 0;
+    //z2 = -sin(alpha)*r;
     for(int i = 0; i < amount; i++){
+        /**glBegin(GL_TRIANGLES);
+            glVertex3f(0,y,0);
+            glVertex3f(x1,y,z1);
+            x2 = cos(alpha)*x1 + sin(alpha)*z1;
+            z2 = -sin(alpha)*x1 + cos(alpha)*z1;
+            x1 = x2;
+            z1 = z2;
+            glVertex3f(x1,y,z1);
+            glNormal3f(0,1,0);
+        glEnd();**/
+        //rotationsmatrix anwenden
+        //x1 = cos(alpha)*x1 + sin(alpha)*z1;
+        //x2 = cos(alpha)*x2 + sin(alpha)*z2;
+        //z1 = (-sin(alpha))*x1 + cos(alpha)*z1;
+        //z2 = (-sin(alpha))*x2 + cos(alpha)*z2;
         paintTriangle(r, alpha);
         glRotatef(alpha * 1.0, 0.0,1.0,0.0);
     }
@@ -349,7 +438,6 @@ void OGLWidget::paintCircle(float r, int alpha){
 
 void OGLWidget::paintTriangle(float r, int alpha){
     glBegin(GL_TRIANGLES);
-        glColor3f(1.0, 0.5, 0);
         glVertex3f(0,0,0);
         glVertex3f(cos(0)*r,0,0);
         glVertex3f(cos(alpha)*r, 0, sin(alpha)*r);
@@ -358,101 +446,132 @@ void OGLWidget::paintTriangle(float r, int alpha){
 }
 
 void OGLWidget::paintFlipperArm(float w, float l, float h){
-    //glRotatef(90, 1,0,0);
     float r = w/2;
     glColor3f(1,0.5,0);
     paintCylinder(r,h);
-    //glTranslatef(0,-w,0);
     glBegin(GL_TRIANGLES);
+        glNormal3f(0,1,0);
         glVertex3f(r, 0, 0);
         glVertex3f(-r, 0,0);
         glVertex3f(0, 0, l-r);
-        glNormal3f(0,1,0);
     glEnd();
     glBegin(GL_TRIANGLES);
+        glNormal3f(0,1,0);
         glVertex3f(r, h, 0);
         glVertex3f(-r, h,0);
         glVertex3f(0, h, l-r);
-        glNormal3f(0,1,0);
     glEnd();
     glBegin(GL_QUADS);
+        glNormal3f(h*(l-r),0,-h*r);
         glVertex3f(0,0,l-r);
         glVertex3f(0,h,l-r);
         glVertex3f(-r,h,0);
         glVertex3f(-r,0,0);
-        glNormal3f(h*(l-r),0,-h*r);
      glEnd();
      glBegin(GL_QUADS);
+         glNormal3f(h*(l-r),0,h*r);
          glVertex3f(0,0,l-r);
          glVertex3f(0,h,l-r);
          glVertex3f(r,h,0);
          glVertex3f(r,0,0);
-         glNormal3f(h*(l-r),0,h*r);
       glEnd();
-      //glTranslatef(0,w,0);
-      //glRotatef(270,1,0,0);
-      //glTranslatef(h,0,0);
 }
 
 void OGLWidget::paintTable(float w, float h, float a){
     glColor3f(0,0.1,1);
-    paintRectangle(w, 0.5);
-    glRotatef(90, 0,1,0);
-    glTranslatef(0.5*h,0,0.5*w);
-    paintRectangle(h,0.5);
-    glRotatef(90, 0,1,0);
-    glTranslatef(0.5*w,0,0.5*h);
-    paintRectangle(w, 0.5);
-    glRotatef(90, 0,1,0);
-    glTranslatef(0.5*h,0,0.5*w);
-    paintRectangle(h,0.5);
-    glTranslatef(-1.5*h,0,-1.5*w);
-    glTranslatef(h,0,w);
-    glRotatef(90,0,1,0);
-    glRotatef(90, 1,0,0);
-    glColor3f(0,0.5,1);
-    paintRectangle(w,h);
-    glRotatef(270,1,0,0);
-    glColor3f(0,0.1,1);
-    glTranslatef(0,0,0.5*h);
+    glBegin(GL_QUADS); //Tischplatte
+        glNormal3f(0,1,0);
+        glVertex3f(-0.5*w, 0, -0.5*h);
+        glVertex3f(-0.5*w, 0, 0.5*h);
+        glVertex3f(0.5*w, 0, 0.5*h);
+        glVertex3f(0.5*w, 0, -0.5*h);
+    glEnd();
+    glColor3f(1,0,0);
+    glBegin(GL_QUADS); //seite rechts
+        glNormal3f(1,0,0);
+        glVertex3f(0.5*w, 0, -0.5*h);
+        glVertex3f(0.5*w, 0, 0.5*h);
+        glVertex3f(0.5*w, 0.5, 0.5*h);
+        glVertex3f(0.5*w, 0.5, -0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //seite links
+        glNormal3f(1,0,0);
+        glVertex3f(-0.5*w, 0, -0.5*h);
+        glVertex3f(-0.5*w, 0, 0.5*h);
+        glVertex3f(-0.5*w, 0.5, 0.5*h);
+        glVertex3f(-0.5*w, 0.5, -0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //seite vorne
+        glNormal3f(0,0,1);
+        glVertex3f(0.5*w, 0, 0.5*h);
+        glVertex3f(-0.5*w, 0, 0.5*h);
+        glVertex3f(-0.5*w, 0.5, 0.5*h);
+        glVertex3f(0.5*w, 0.5, 0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //seite links
+        glNormal3f(1,0,0);
+        glVertex3f(0.5*w, 0, -0.5*h);
+        glVertex3f(-0.5*w, 0, -0.5*h);
+        glVertex3f(-0.5*w, 0.5, -0.5*h);
+        glVertex3f(0.5*w, 0.5, -0.5*h);
+    glEnd();
+    //paintRectangle(w, 0.5);
+    //glRotatef(90, 0,1,0);
+    //glTranslatef(0.5*h,0,0.5*w);
+    //paintRectangle(h,0.5);
+    //glRotatef(90, 0,1,0);
+    //glTranslatef(0.5*w,0,0.5*h);
+    //paintRectangle(w, 0.5);
+    //glRotatef(90, 0,1,0);
+    //glTranslatef(0.5*h,0,0.5*w);
+    //paintRectangle(h,0.5);
+    //glTranslatef(-1.5*h,0,-1.5*w);
+    //glTranslatef(h,0,w);
+    //glRotatef(90,0,1,0);
+    //glRotatef(90, 1,0,0);
+    //glColor3f(0,0.5,1);
+    //paintRectangle(w,h);
+    //glRotatef(270,1,0,0);
+    //glColor3f(0,0.1,1);
+    //glTranslatef(0,0,0.5*h);
     glBegin(GL_QUADS);
+        glNormal3f(0.5-0.75*a,0,-0.5*w+0.5*a);
         glVertex3f(0.5*a,0,0.5*h-0.5);
         glVertex3f(0.5*a,0.5,0.5*h-0.5);
         glVertex3f(0.5*w,0.5,0.5*h-0.75*a);
         glVertex3f(0.5*w,0,0.5*h-0.75*a);
-        glNormal3f(0.5-0.75*a,0,-0.5*w+0.5*a);
     glEnd();
     glBegin(GL_QUADS);
+        glNormal3f(0,1,0);
         glVertex3f(0.5*a,0.5,0.5*h-0.5);
         glVertex3f(0.5*a,0.5,0.5*h);
         glVertex3f(0.5*w,0.5,0.5*h);
         glVertex3f(0.5*w,0.5,0.5*h-0.75*a);
-        glNormal3f(0,1,0);
      glEnd();
      glBegin(GL_QUADS);
+        glNormal3f(0.5-0.75*a,0,0.5*w+0.5*a);
          glVertex3f(-0.5*a,0,0.5*h-0.5);
          glVertex3f(-0.5*a,0.5,0.5*h-0.5);
          glVertex3f(-0.5*w,0.5,0.5*h-0.75*a);
          glVertex3f(-0.5*w,0,0.5*h-0.75*a);
-         glNormal3f(0.5-0.75*a,0,0.5*w+0.5*a);
      glEnd();
      glBegin(GL_QUADS);
+         glNormal3f(0,1,0);
          glVertex3f(-0.5*a,0.5,0.5*h-0.5);
          glVertex3f(-0.5*a,0.5,0.5*h);
          glVertex3f(-0.5*w,0.5,0.5*h);
          glVertex3f(-0.5*w,0.5,0.5*h-0.75*a);
-         glNormal3f(0,1,0);
      glEnd();
-     glTranslatef(0,0,-0.5*h);
+     //glTranslatef(0,0,-0.5*h);
 }
 
 void OGLWidget::paintRectangle(float r, float h, int alpha){
     glBegin(GL_QUADS);
+        glNormal3f(cos(alpha/2), 0, sin(alpha/2));
         glVertex3f(r,0,0);
         glVertex3f(cos(alpha)*r, 0, sin(alpha)*r);
         glVertex3f(r,h,0);
         glVertex3f(cos(alpha)*r, h, sin(alpha)*r);
-        glNormal3f(cos(alpha/2), 0, sin(alpha/2));
     glEnd();
 }
 
