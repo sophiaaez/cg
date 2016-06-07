@@ -137,6 +137,7 @@ void OGLWidget::paintGL()
 
     glScalef(0.5,0.5,0.5);
     glScalef(2,2,2);
+    ox = 3;
     glTranslatef(ox, 0, oz);
 
     glScalef(0.5,0.5,0.5);
@@ -149,33 +150,59 @@ void OGLWidget::paintGL()
     //dx = (dx+dxN)*(0.5);
     //dy = (dy+dyN)*(0.5);
 
+    if(done){
+        if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){
 
-    if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){
+        }else{
+            vx = -vx;
+            //ax = -ax;
+        }
+        if(-6.5 < oz+vz*0.1 && oz+vz*0.1 <6.5){
 
-    }else{
-        vx = -vx;
-        //ax = -ax;
+        }else{
+            vz = 0;
+            az = 0;
+        }
+        if(done && cu_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +0.5 && cu_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 0.5){
+            //Zusammenstoß mit Cube eventuell
+        }
+        if(done && cy_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cy_x +0.5 && cy_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cy_z + 0.5){
+            //Zusammenstoß mit Cylinder eventuell
+        }
+
+
+        //TODO if mit kollision jeder bande, vx und cz in geraden vektoren ändern :)
+        //bande rechts
+        double brxt = ((ox+vx*0.1) - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
+        double brzt = ((oz+vz*0.1) - (0.5*14 - 0.5))/((0.5-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
+        //da die werte nur auf zwei nachkommastellen übereinstimmen müssen
+
+        std::cout<< "brxt: "<<brxt<<" brzt: "<<brzt<<std::endl;
+        if(brxt == brzt && brxt <= 1.0 && brxt >= 0.0){
+            vx = (0.5*10-0.5*3)*0.1;
+            vz = ((0.5*14-0.75*3)-(0.5*14+0.5))*0.1;
+            std::cout<<"bande rechts getroffen"<< brxt << " " <<brzt<<std::endl;
+        }
+        //bande links
+        double blxt = ((ox+vx*0.1) + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
+        double blzt = ((oz+vz*0.1) - (0.5*14 - 0.5))/((0.5-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
+
+        if(blxt == blzt && blxt <= 1.0 && blxt >= 0.0){
+            vx = (-0.5*10 + 0.5*3)*0.1;
+            vz = ((0.5*14-0.75*3)-(0.5*14+0.5));
+            std::cout<<"bande links getroffen"<<std::endl;
+        }
+
+
+
+        //TODO hier richtige schwerkraft einbauen
+
+        vx = vx + ax * 0.1;
+        vz = vz + az * 0.1;
+        ox = ox + vx * 0.1;
+        oz = oz + vz * 0.1;
     }
-    if(-6.5 < oz+vz*0.1 && oz+vz*0.1 <6.5){
 
-    }else{
-        vz = 0;
-        az = 0;
-    }
-    if(done && cu_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +0.5 && cu_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 0.5){
-        //Zusammenstoß mit Cube eventuell
-    }
-    if(done && cy_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cy_x +0.5 && cy_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cy_z + 0.5){
-        //Zusammenstoß mit Cylinder eventuell
-    }
-
-    //TODO if mit kollision jeder bande, vx und cz in geraden vektoren ändern :)
-
-    //TODO hier richtige schwerkraft einbauen
-    vx = vx - ax * 0.1;
-    vz = vz + az * 0.1;
-    ox = ox + vx * 0.1;
-    oz = oz + vz * 0.1;
     update();
 }
 
@@ -196,32 +223,34 @@ void OGLWidget::mousePressEvent(QMouseEvent *event)
 
 void OGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+    vz = 1;
+    az = 0.01;
     done = true;
-    dxN = event->x() -lastpos.x();
-    dyN = event->y() -lastpos.y();
-    //while(dx == event->x() -lastpos.x() && dy == event->y() -lastpos.y()){
+    //dxN = event->x() -lastpos.x();
+    //dyN = event->y() -lastpos.y();
+    //while(dx == event->x() -l) &&astpos.x( dy == event->y() -lastpos.y()){
 
    // }
 //    dx = (dx+dxN)*(0.001);
 //    dy = (dy+dyN)*(0.001);
 //    update();
     if(dxN > 10){
-        dxN *= 0.1;
+        //dxN *= 0.1;
     }
     if(dxN > 10){
-        dxN *= 0.1;
+        //dxN *= 0.1;
     }
     if(dyN > 10){
-        dyN *= 0.1;
+        //dyN *= 0.1;
     }
     if(dyN > 10){
-        dyN *= 0.1;
+        //dyN *= 0.1;
     }
 
-    vx = dxN;
-    vz = dyN;
-    az = 0.5;
-    ax = 0.1;
+    //vx = dxN;
+    //vz = dyN;
+    //az = 0.5;
+   // ax = 0.1;
 }
 
 
@@ -254,7 +283,7 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
             }
             break;
         case Qt::Key_E:
-            if(!done&& cu_z-0.1 > -7){
+            if(!done&& cu_z-0.1 > -6){
                 cu_z -= 0.1;
             }
             break;
@@ -275,6 +304,8 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
             break;
         case Qt::Key_Return:
             if(!done){
+                vz = 1;
+                az = 0.01;
                 done = true;
             }
         break;
