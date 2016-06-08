@@ -18,6 +18,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     rotz = 0;
     zoom = 100;
     ox, oz, vx, vz, ax, az = 0;
+    ox = -4;
     perspective = true;
     cy_x = 0;
     cy_z = 0;
@@ -137,9 +138,7 @@ void OGLWidget::paintGL()
 
     glScalef(0.5,0.5,0.5);
     glScalef(2,2,2);
-    ox = 3;
     glTranslatef(ox, 0, oz);
-
     glScalef(0.5,0.5,0.5);
     glColor3f(0.75,0,0.1);
     drawSphere(a,35,35);
@@ -173,37 +172,116 @@ void OGLWidget::paintGL()
 
         //TODO if mit kollision jeder bande, vx und cz in geraden vektoren ändern :)
         //bande rechts
-        double brxt = ((ox+vx*0.1) - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
-        double brzt = ((oz+vz*0.1) - (0.5*14 - 0.5))/((0.5-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
-        //da die werte nur auf zwei nachkommastellen übereinstimmen müssen
-
-        std::cout<< "brxt: "<<brxt<<" brzt: "<<brzt<<std::endl;
-        if(brxt == brzt && brxt <= 1.0 && brxt >= 0.0){
-            vx = (0.5*10-0.5*3)*0.1;
-            vz = ((0.5*14-0.75*3)-(0.5*14+0.5))*0.1;
-            std::cout<<"bande rechts getroffen"<< brxt << " " <<brzt<<std::endl;
+        double brxt = ((ox+vx*0.1)+1 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
+        double brzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
+        //std::cout<< "brxt: "<<brxt<<" brzt: "<<brzt<<std::endl;
+        if(aufStrecke(brxt, brzt)){
+            //std::cout<<vx<<" "<<vz<<std::endl;
+            vx = -(0.5*10 - 0.5*3)*0.5;
+            vz = -((0.5*14-0.75*3)-(0.5*14-0.5))*0.5;
+            std::cout<<"bande rechts getroffen "<< brxt << " " <<brzt<< " " <<vx << " " <<vz<<std::endl;
         }
         //bande links
-        double blxt = ((ox+vx*0.1) + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
-        double blzt = ((oz+vz*0.1) - (0.5*14 - 0.5))/((0.5-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
-
-        if(blxt == blzt && blxt <= 1.0 && blxt >= 0.0){
-            vx = (-0.5*10 + 0.5*3)*0.1;
-            vz = ((0.5*14-0.75*3)-(0.5*14+0.5));
-            std::cout<<"bande links getroffen"<<std::endl;
+        double blxt = ((ox+vx*0.1)-1 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
+        double blzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
+        std::cout<<"blxt: " <<blxt<<" blzt: "<<blzt<<std::endl;
+        if(aufStrecke(blxt, blzt)){
+            vx = -(-0.5*10 + 0.5*3)*0.5;
+            vz = -((0.5*14-0.75*3) - (0.5*14-0.5))*0.5;
+            std::cout<<"bande links getroffen "<<blxt<< " "<< blzt<<vx << " " <<vz<<std::endl;
         }
 
 
 
         //TODO hier richtige schwerkraft einbauen
 
-        vx = vx + ax * 0.1;
-        vz = vz + az * 0.1;
+        //vx = vx + ax * 0.1;
+        //vz = vz + az * 0.1;
         ox = ox + vx * 0.1;
         oz = oz + vz * 0.1;
     }
 
     update();
+}
+
+boolean OGLWidget::aufStrecke(float xt, float zt){
+    boolean aufstrecke = false;
+    //da die werte nur auf eine nachkommastellen übereinstimmen müssen, da wir sonst nie auf ein ergebnis kommen
+    xt = (float)((int)(xt*100))/100;
+    zt = (float)((int)(zt*100))/100;
+    if(xt <= 1 && xt >= 0){
+        aufstrecke = true;
+    }else{
+        return false;
+    }
+    if(xt == zt){
+        return true && aufstrecke;
+    }
+    int xrest1 = (xt*10);
+    int zrest1 = (zt*10);
+    int xrest = (xt - (float)((int)(xt*10))/10)*100;
+    int zrest = (zt - (float)((int)(zt*10))/10)*100;
+    if(xrest1 == zrest1){
+        return closeTo(xrest, zrest) && aufstrecke;
+    }
+    if(closeTo(xrest1,zrest1)){
+        if(xrest == 0 && (zrest == 9 || zrest == 8)){
+            return true && aufstrecke;
+        }else if( zrest == 0 && (xrest == 9 || xrest == 8)){
+            return true && aufstrecke;
+        }else if(xrest == 1 && zrest == 9){
+            return true && aufstrecke;
+        }else if(zrest == 1 && xrest == 9){
+            return true && aufstrecke;
+        }
+    }
+    return false;
+}
+
+boolean OGLWidget::closeTo(int i, int j){ // i und j sind ziffern
+    switch(i){
+    case 0: if(j == 1){
+            return true;
+            }
+            break;
+    case 1: if(j == 0 || j == 2 || j == 3){
+            return true;
+            }
+            break;
+    case 2: if(j == 0 || j == 1 || j == 3 || j == 4){
+            return true;
+            }
+            break;
+    case 3: if(j == 1 || j == 2 || j == 4 || j == 5){
+            return true;
+            }
+            break;
+    case 4: if(j == 2 || j == 3 || j == 5 || j == 6){
+            return true;
+            }
+            break;
+    case 5: if(j == 3 || j == 4 || j == 6 || j == 7){
+            return true;
+            }
+            break;
+    case 6: if(j == 4 || j == 5 || j == 7 || j == 8){
+            return true;
+            }
+            break;
+    case 7: if(j == 5 || j == 6 || j == 8 || j == 9){
+            return true;
+            }
+            break;
+    case 8: if(j == 6 || j == 7 || j == 9){
+            return true;
+            }
+            break;
+    case 9: if(j == 7 || j == 8){
+            return true;
+            }
+            break;
+    }
+    return false;
 }
 
 void OGLWidget::resizeGL(int w, int h)

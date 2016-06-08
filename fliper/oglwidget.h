@@ -81,6 +81,8 @@ protected:
     void paintFlipperArm(float w, float l, float h);
     void paintSquare(float s);
     void paintCube(float s);
+    boolean aufStrecke(float xt, float zt);
+    boolean closeTo(int i, int j);
 };
 
 
