@@ -69,8 +69,11 @@ protected:
     int rotz;
     int zoom;       // Zoom factor (0..200, 100 for 1:1)
     int unfold;     // Unfolding position (0..100, 0 closed
+    int faa;
     boolean drawable;
     QPoint lastpos; // Last position of mouse pressed, used for dragging
+    boolean slowmo;
+    double speed;
     void drawSphere(double r, int lats, int longs);
     void paintTable(float w, float h, float a);
     void paintRectangle(float w, float h);

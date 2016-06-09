@@ -18,7 +18,6 @@ OGLWidget::OGLWidget(QWidget *parent)
     rotz = 0;
     zoom = 100;
     ox, oz, vx, vz, ax, az = 0;
-    ox = -4;
     perspective = true;
     cy_x = 0;
     cy_z = 0;
@@ -26,6 +25,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     cu_z = -4;
     done = false;
     up = false;
+    faa = 0; //Flipper arm alpha
 
 
 }
@@ -170,6 +170,7 @@ void OGLWidget::paintGL()
         }
 
 
+
         //TODO if mit kollision jeder bande, vx und cz in geraden vektoren ändern :)
         //bande rechts
         double brxt = ((ox+vx*0.1)+1 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
@@ -184,14 +185,25 @@ void OGLWidget::paintGL()
         //bande links
         double blxt = ((ox+vx*0.1)-1 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
         double blzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
-        std::cout<<"blxt: " <<blxt<<" blzt: "<<blzt<<std::endl;
+        //std::cout<<"blxt: " <<blxt<<" blzt: "<<blzt<<std::endl;
         if(aufStrecke(blxt, blzt)){
             vx = -(-0.5*10 + 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3) - (0.5*14-0.5))*0.5;
             std::cout<<"bande links getroffen "<<blxt<< " "<< blzt<<vx << " " <<vz<<std::endl;
         }
-
-
+        //flipper arm
+        double paxt = ((ox+vx*0.1) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14))/((cos(faa)*0.5*3+ sin(faa)*(0.5*14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14));//pinball arm x t-wert
+        double pazt = ((oz+vz*0.1)+1 - (sin(faa)*0.5*3 + cos(faa)*0.5*14))/((-sin(faa)*0.5*3+cos(faa)*(0.5*14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*0.5*14));//pinball arm z t-wert
+        if(aufStrecke(paxt, pazt)){
+            vx = -((cos(faa)*0.5*3+ sin(faa)*(14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*7));
+            vz = (-sin(faa)*0.5*3+cos(faa)*(14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*7);
+            std::cout<<"flipperarm getroffen "<<paxt<<" "<<pazt<<" "<<vx<<" "<<vz<<std::endl;
+        }
+        //kollision mit dem kleinen teil der linken bande
+        if((ox+vx*0.1) <= -0.5*3 && (oz+vz*0.1) > ((0.5*14)-1)){
+            std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
+            vx = 0;
+        }
 
         //TODO hier richtige schwerkraft einbauen
 
@@ -200,7 +212,6 @@ void OGLWidget::paintGL()
         ox = ox + vx * 0.1;
         oz = oz + vz * 0.1;
     }
-
     update();
 }
 
@@ -232,6 +243,8 @@ boolean OGLWidget::aufStrecke(float xt, float zt){
         }else if(xrest == 1 && zrest == 9){
             return true && aufstrecke;
         }else if(zrest == 1 && xrest == 9){
+            return true && aufstrecke;
+        }else if(xrest == 0 && zrest == 0){
             return true && aufstrecke;
         }
     }
