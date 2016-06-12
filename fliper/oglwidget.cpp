@@ -26,6 +26,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     done = false;
     up = false;
     faa = 0; //Flipper arm alpha
+    punkte = 0;
 
 
 }
@@ -102,7 +103,7 @@ void OGLWidget::paintGL()
     if(perspective){
         glOrtho(-10,10,-10,10,-100,100);
     }else{
-        glFrustum(-5,+5,-5,+5,5,50);
+        glFrustum(-10,10,0,5,5,100);
     }
 
     // Apply rotation angles
@@ -150,6 +151,12 @@ void OGLWidget::paintGL()
     //dy = (dy+dyN)*(0.5);
 
     if(done){
+        double laenge = sqrt((vx*vx + 0*0 + vz*vz));
+        if(laenge != 0){//normalisieren
+            vx = 1/laenge *vx;
+            vz = 1/laenge *vz;
+        }
+
         if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){
 
         }else{
@@ -162,11 +169,21 @@ void OGLWidget::paintGL()
             vz = 0;
             az = 0;
         }
-        if(done && cu_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +0.5 && cu_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 0.5){
-            //Zusammenstoß mit Cube eventuell
+
+        //Zusammenstoß mit Cube
+        if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
+            vx = 0;
+            vz = 0;
+        }
+         //Zusammenstoß mit Cylinder
+        double abstandx = cy_x - ox+vx*0.1;
+        double abstandz = cy_z - oz+vz*0.1;
+        if(abstandx >= -1.25 && abstandx <= 1.25 && abstandz >= -1.25 && abstandz <= 1.25){
+            vx = 0;
+            vz = 0;
         }
         if(done && cy_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cy_x +0.5 && cy_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cy_z + 0.5){
-            //Zusammenstoß mit Cylinder eventuell
+
         }
 
 
@@ -180,6 +197,11 @@ void OGLWidget::paintGL()
             //std::cout<<vx<<" "<<vz<<std::endl;
             vx = -(0.5*10 - 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3)-(0.5*14-0.5))*0.5;
+            laenge = sqrt((vx*vx + 0*0 + vz*vz));
+            if(laenge != 0){//normalisieren
+                vx = 1/laenge *vx;
+                vz = 1/laenge *vz;
+            }
             std::cout<<"bande rechts getroffen "<< brxt << " " <<brzt<< " " <<vx << " " <<vz<<std::endl;
         }
         //bande links
@@ -189,6 +211,11 @@ void OGLWidget::paintGL()
         if(aufStrecke(blxt, blzt)){
             vx = -(-0.5*10 + 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3) - (0.5*14-0.5))*0.5;
+            laenge = sqrt((vx*vx + 0*0 + vz*vz));
+            if(laenge != 0){//normalisieren
+                vx = 1/laenge *vx;
+                vz = 1/laenge *vz;
+            }
             std::cout<<"bande links getroffen "<<blxt<< " "<< blzt<<vx << " " <<vz<<std::endl;
         }
         //flipper arm
@@ -197,6 +224,11 @@ void OGLWidget::paintGL()
         if(aufStrecke(paxt, pazt)){
             vx = -((cos(faa)*0.5*3+ sin(faa)*(14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*7));
             vz = (-sin(faa)*0.5*3+cos(faa)*(14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*7);
+            laenge = sqrt((vx*vx + 0*0 + vz*vz));
+            if(laenge != 0){ //normalisieren
+                vx = 1/laenge *vx;
+                vz = 1/laenge *vz;
+            }
             std::cout<<"flipperarm getroffen "<<paxt<<" "<<pazt<<" "<<vx<<" "<<vz<<std::endl;
         }
         //kollision mit dem kleinen teil der linken bande
@@ -206,6 +238,7 @@ void OGLWidget::paintGL()
         }
 
         //TODO hier richtige schwerkraft einbauen
+        //normalisieren von vx und vz
 
         //vx = vx + ax * 0.1;
         //vz = vz + az * 0.1;

@@ -70,6 +70,7 @@ protected:
     int zoom;       // Zoom factor (0..200, 100 for 1:1)
     int unfold;     // Unfolding position (0..100, 0 closed
     int faa;
+    int punkte;
     boolean drawable;
     QPoint lastpos; // Last position of mouse pressed, used for dragging
     boolean slowmo;
