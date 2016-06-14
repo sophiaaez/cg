@@ -125,7 +125,7 @@ void OGLWidget::paintGL()
     paintTable(10,14, 3);
     glTranslatef(7,0,-14);
     glColor3f(255,255,255);
-    paintFigure(punkte);
+    paintScore(punkte);
     glTranslatef(-7,0,14);
     glTranslatef(1,0,7);
     glRotatef(270,0,1,0);
@@ -283,11 +283,15 @@ void OGLWidget::paintGL()
             vx = wandr;
         }
         if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 >= wandz+0.1){ //zusammenstoß von unten
-            vz = -vz;
+            vz = 1;
         }
 
         //TODO hier richtige schwerkraft einbauen
-
+        laenge = sqrt((vx*vx + 0*0 + vz*vz));
+        if(laenge != 0){//normalisieren
+                   vx = 1/laenge *vx;
+                   vz = 1/laenge *vz;
+        }
         //vx = vx + ax * 0.1;
         //vz = vz + az * 0.1;
         ox = ox + vx * 0.1;
@@ -824,29 +828,34 @@ void OGLWidget::paintCube(float s){
 }
 
 void OGLWidget::paintScore(int i){
-    glColor3f(0,0,0);
+    int ziffer1, ziffer2, ziffer3, ziffer4;
+    glColor3f(255,255,255);
     //wir gehen davon aus, dass der maximale score 1000 ist
     int ziffer = i % 10;
-    std::cout<<ziffer;
-    paintFigure(ziffer);
+    ziffer4 = ziffer;
+    //std::cout<<ziffer;
+    paintFigure(ziffer4);
     glTranslatef(-2,0,0);
     i = i - ziffer;
     ziffer = i % 100;
     ziffer = ziffer/10;
-    std::cout<<ziffer;
-    paintFigure(ziffer);
+    ziffer3 = ziffer;
+    //std::cout<<ziffer;
+    paintFigure(ziffer3);
     glTranslatef(-2,0,0);
     i = i - ziffer;
     ziffer = i % 1000;
     ziffer = ziffer/100;
-    std::cout<<ziffer;
-    paintFigure(ziffer);
+    //std::cout<<ziffer;
+    ziffer2 = ziffer;
+    paintFigure(ziffer2);
     glTranslatef(-2,0,0);
     i = i - ziffer;
     ziffer = i % 10000;
     ziffer = ziffer/1000;
-    std::cout<<ziffer<<std::endl;
-    paintFigure(ziffer);
+    //std::cout<<ziffer<<std::endl;
+    ziffer1 = ziffer;
+    paintFigure(ziffer1);
     glTranslatef(6,0,0);
 }
 
@@ -930,9 +939,9 @@ void OGLWidget::paintFigure(int i){
         break;
     case 9:
         glRotatef(180,0,1,0);
-        glTranslatef(0,0,-4);
+        glTranslatef(-1,0,-4);
         paintFigure(6);
-        glTranslatef(0,0,4);
+        glTranslatef(1,0,4);
         glRotatef(-180,0,1,0);
         break;
     }
