@@ -279,6 +279,9 @@ void OGLWidget::paintGL()
 
         //wand
         if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 <= wandz-0.1){ //zusammenstoß von oben
+            if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
+
+            }
             vz = 0;
             vx = wandr;
         }
