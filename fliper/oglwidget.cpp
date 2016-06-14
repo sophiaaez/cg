@@ -18,16 +18,20 @@ OGLWidget::OGLWidget(QWidget *parent)
     rotz = 0;
     zoom = 100;
     ox, oz, vx, vz, ax, az = 0;
+    oz = -6;
     perspective = true;
-    cy_x = 0;
-    cy_z = 0;
+    cy_x = 3;
+    cy_z = 4;
     cu_x = -3;
     cu_z = -4;
     done = false;
     up = false;
     faa = 0; //Flipper arm alpha
+    fad = 0; //Flipper arm direction/richtung (-1 = nach unten zurück, +1 nach oben)
     punkte = 0;
-
+    wandx = 3;
+    wandz = -4;
+    wandr = 0.1;//Richtung der Wand für links - und für rechts + werte))
 
 }
 
@@ -80,16 +84,18 @@ void OGLWidget::initializeGL()
 
     // For wireframe replace GL_FILL with GL_LINE
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-
-    GLfloat lp1[4]  = { 20,  0,  0, 0};
-    GLfloat lp2[4]  = { -20, 0 , 0,  0};
-    GLfloat red[4]  = {1.0, 0 , 0,  1};
-    GLfloat green[4] = { 0, 1.0, 0.0,  1};
-    //GLfloat blue[4] = { 0, 0.0, 1.0,  1};
-    glClearColor(0,0,0,0); //HIER AENDERUNG 0 0 0 1
+    glClearColor(0,0,0,0);
     glClear (GL_COLOR_BUFFER_BIT);
     glColor3f (1.0, 1.0, 1.0);
-
+    glShadeModel(GL_SMOOTH);
+   /**glEnable(GL_LIGHTING);
+    float light_pos[] = {10.f,5.f,10.f,0.f};
+    glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
+    float light_diffuse[] = {8.f,8.f,8.f,1.f};
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
+    glEnable(GL_LIGHT1);
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_COLOR_MATERIAL);**/
 
 }
 
@@ -115,16 +121,48 @@ void OGLWidget::paintGL()
     float scale = zoom/100.0;
     glScalef( scale, scale, scale ); // Scale along all axis
 
-
-
     glRotatef(30,1,0,0);
     paintTable(10,14, 3);
-    glColor3f(0,1,0);
+    glTranslatef(7,0,-14);
+    glColor3f(255,255,255);
+    paintFigure(punkte);
+    glTranslatef(-7,0,14);
     glTranslatef(1,0,7);
     glRotatef(270,0,1,0);
+    if(up){
+        if(fad > 0){ //arm nach oben
+            if(faa > -50){
+                faa -= 2;
+            }else{
+                fad = -1;
+            }
+        }else{
+            if(faa < 0){
+                faa += 2;
+            }else{
+                up = false;
+            }
+        }
+    }
+    glRotatef(faa, 0,1,0);
     paintFlipperArm(1,3,1);
+    glRotatef(-faa,0,1,0);
     glRotatef(90,0,1,0);
     glTranslatef(-1,0,-7);
+    glTranslatef(-3.5,0,-5.5);
+    glColor3f(255,0,150);
+    paintCircle(1,1);
+    glTranslatef(3.5,0,5.5);
+    if(wandr > 0 && wandx+wandr < 4){
+        wandx += wandr;
+    }else if(wandr > 0 &&  wandx+wandr >= 4){
+        wandr = -wandr;
+    }else if(wandr < 0 &&  wandx+wandr >-4){
+        wandx += wandr;
+    }else if(wandr < 0 &&  wandx+wandr <= -4){
+        wandr = -wandr;
+    }
+    paintWall(0.2,2,wandx, wandz);
     glColor3f(0.75,0,0.1);
     glTranslatef(cy_x, 0, cy_z);
     paintCylinder(0.6, 1);
@@ -134,11 +172,8 @@ void OGLWidget::paintGL()
     paintCube(1);
     glTranslatef(-cu_x, 0, -cu_z);
 
-
     glPushMatrix();
 
-    glScalef(0.5,0.5,0.5);
-    glScalef(2,2,2);
     glTranslatef(ox, 0, oz);
     glScalef(0.5,0.5,0.5);
     glColor3f(0.75,0,0.1);
@@ -151,6 +186,7 @@ void OGLWidget::paintGL()
     //dy = (dy+dyN)*(0.5);
 
     if(done){
+
         double laenge = sqrt((vx*vx + 0*0 + vz*vz));
         if(laenge != 0){//normalisieren
             vx = 1/laenge *vx;
@@ -182,13 +218,14 @@ void OGLWidget::paintGL()
             vx = 0;
             vz = 0;
         }
-        if(done && cy_x -0.5 < ox+vx*0.1 && ox+vx*0.1 < cy_x +0.5 && cy_z -0.5 < oz+vz*0.1 && oz+vz*0.1 < cy_z + 0.5){
+        //Punkte durch pinken Kreis
+       abstandx = (-3.5) - ox+vx*0.1;
+       abstandz = (-5.5) - oz+vz*0.1;
+       if(abstandx >= -1 && abstandx <= 1 && abstandz >= -1 && abstandz <= 1){
+            punkte += 1;
+            std::cout<<punkte<<std::endl;
+       }
 
-        }
-
-
-
-        //TODO if mit kollision jeder bande, vx und cz in geraden vektoren ändern :)
         //bande rechts
         double brxt = ((ox+vx*0.1)+1 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
         double brzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
@@ -204,6 +241,7 @@ void OGLWidget::paintGL()
             }
             std::cout<<"bande rechts getroffen "<< brxt << " " <<brzt<< " " <<vx << " " <<vz<<std::endl;
         }
+
         //bande links
         double blxt = ((ox+vx*0.1)-1 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
         double blzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
@@ -218,6 +256,7 @@ void OGLWidget::paintGL()
             }
             std::cout<<"bande links getroffen "<<blxt<< " "<< blzt<<vx << " " <<vz<<std::endl;
         }
+
         //flipper arm
         double paxt = ((ox+vx*0.1) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14))/((cos(faa)*0.5*3+ sin(faa)*(0.5*14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14));//pinball arm x t-wert
         double pazt = ((oz+vz*0.1)+1 - (sin(faa)*0.5*3 + cos(faa)*0.5*14))/((-sin(faa)*0.5*3+cos(faa)*(0.5*14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*0.5*14));//pinball arm z t-wert
@@ -231,14 +270,23 @@ void OGLWidget::paintGL()
             }
             std::cout<<"flipperarm getroffen "<<paxt<<" "<<pazt<<" "<<vx<<" "<<vz<<std::endl;
         }
+
         //kollision mit dem kleinen teil der linken bande
         if((ox+vx*0.1) <= -0.5*3 && (oz+vz*0.1) > ((0.5*14)-1)){
             std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
             vx = 0;
         }
 
+        //wand
+        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 <= wandz-0.1){ //zusammenstoß von oben
+            vz = 0;
+            vx = wandr;
+        }
+        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 >= wandz+0.1){ //zusammenstoß von unten
+            vz = -vz;
+        }
+
         //TODO hier richtige schwerkraft einbauen
-        //normalisieren von vx und vz
 
         //vx = vx + ax * 0.1;
         //vz = vz + az * 0.1;
@@ -347,8 +395,10 @@ void OGLWidget::mousePressEvent(QMouseEvent *event)
 
 void OGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
-    vz = 1;
-    az = 0.01;
+    if(!done){
+        vz = 1;
+        az = 0.01;
+    }
     done = true;
     //dxN = event->x() -lastpos.x();
     //dyN = event->y() -lastpos.y();
@@ -436,6 +486,7 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
         case Qt::Key_Space:
             if(!up){
                 up = true;
+                fad = +1;
                 //positionsaenderung fuer flipperarm
             }
         break;
@@ -494,9 +545,9 @@ void OGLWidget::paintCylinder(float r, float h){
     z3 = z2;
     z4 = z3;
     z2 = z1;*/
-    paintCircle(r, alpha, 0);
+    paintCircle(r, alpha);
     glTranslatef(0,h,0);
-    paintCircle(r, alpha, h);
+    paintCircle(r, alpha);
     glTranslatef(0,-h,0);
     for(int i = 0; i < amount; i++){
         /**glBegin(GL_QUADS);
@@ -561,13 +612,13 @@ void OGLWidget::paintCylinder(float r, float h){
 
 }
 
-void OGLWidget::paintCircle(float r, int alpha, int y){ //Wahrscheinlicher fehler alpha in bogen oder gradmaß, das was halt falsch ists
+void OGLWidget::paintCircle(float r, int alpha){ //Wahrscheinlicher fehler alpha in bogen oder gradmaß, das was halt falsch ists
     int amount = 360/alpha;
-    alpha = alpha/360 * 2 * M_PI;
-    int x1, x2, z1, z2;
-    x1 = r;
+    //alpha = alpha/360 * 2 * M_PI;
+    //int x1, x2, z1, z2;
+    //x1 = r;
     //x2 = cos(alpha)*r;
-    z1 = 0;
+    //z1 = 0;
     //z2 = -sin(alpha)*r;
     for(int i = 0; i < amount; i++){
         /**glBegin(GL_TRIANGLES);
@@ -586,17 +637,17 @@ void OGLWidget::paintCircle(float r, int alpha, int y){ //Wahrscheinlicher fehle
         //z1 = (-sin(alpha))*x1 + cos(alpha)*z1;
         //z2 = (-sin(alpha))*x2 + cos(alpha)*z2;
         paintTriangle(r, alpha);
-        glRotatef(alpha * 1.0, 0.0,1.0,0.0);
+        glRotatef(alpha, 0.0,1.0,0.0);
     }
     //glRotatef(alpha, 0,1,0);
 }
 
 void OGLWidget::paintTriangle(float r, int alpha){
     glBegin(GL_TRIANGLES);
+        glNormal3f(0,1,0);
         glVertex3f(0,0,0);
         glVertex3f(cos(0)*r,0,0);
         glVertex3f(cos(alpha)*r, 0, sin(alpha)*r);
-        glNormal3f(0,1,0);
     glEnd();
 }
 
@@ -770,4 +821,167 @@ void OGLWidget::paintCube(float s){
         paintSquare(s);
         glTranslatef(0,s,s);
         glRotatef(270,1,0,0);
+}
+
+void OGLWidget::paintScore(int i){
+    glColor3f(0,0,0);
+    //wir gehen davon aus, dass der maximale score 1000 ist
+    int ziffer = i % 10;
+    std::cout<<ziffer;
+    paintFigure(ziffer);
+    glTranslatef(-2,0,0);
+    i = i - ziffer;
+    ziffer = i % 100;
+    ziffer = ziffer/10;
+    std::cout<<ziffer;
+    paintFigure(ziffer);
+    glTranslatef(-2,0,0);
+    i = i - ziffer;
+    ziffer = i % 1000;
+    ziffer = ziffer/100;
+    std::cout<<ziffer;
+    paintFigure(ziffer);
+    glTranslatef(-2,0,0);
+    i = i - ziffer;
+    ziffer = i % 10000;
+    ziffer = ziffer/1000;
+    std::cout<<ziffer<<std::endl;
+    paintFigure(ziffer);
+    glTranslatef(6,0,0);
+}
+
+void OGLWidget::paintLine(double h, double w){
+    glBegin(GL_QUADS);
+        glNormal3f(0,1,0);
+        glVertex3f(0,0,0);
+        glVertex3f(w,0,0);
+        glVertex3f(w,0,h);
+        glVertex3f(0,0,h);
+    glEnd();
+}
+
+void OGLWidget::paintFigure(int i){
+    switch(i){
+    case 0:
+        paintLine(4,0.2);
+        glTranslatef(1,0,0);
+        paintLine(4,0.2);
+        glTranslatef(-1,0,0);
+        paintLine(0.2,1);
+        glTranslatef(0,0,4);
+        paintLine(0.2,1);
+        glTranslatef(0,0,-4);
+        break;
+    case 1:
+        glTranslatef(1,0,0);
+        paintLine(4,0.2);
+        glTranslatef(-1,0,0);
+        break;
+    case 2:
+        paintLine(0.2,1);
+        glTranslatef(0,0,2);
+        paintLine(0.2,1);
+        paintLine(2,0.2);
+        glTranslatef(0,0,2);
+        paintLine(0.2,1);
+        glTranslatef(0,0,-4);
+        glTranslatef(1,0,0);
+        paintLine(2,0.2);
+        glTranslatef(-1,0,0);
+        break;
+    case 3:
+        paintFigure(1);
+        paintLine(0.2,1);
+        glTranslatef(0,0,2);
+        paintLine(0.2,1);
+        glTranslatef(0,0,2);
+        paintLine(0.2,1);
+        glTranslatef(0,0,-4);
+        break;
+    case 4:
+        paintFigure(1);
+        paintLine(2,0.2);
+        glTranslatef(0,0,2);
+        paintLine(0.2,1);
+        glTranslatef(0,0,-2);
+        break;
+    case 5:
+        glRotatef(180,1,0,0);
+        glTranslatef(0,0,-4);
+        paintFigure(2);
+        glTranslatef(0,0,4);
+        glRotatef(-180,1,0,0);
+        break;
+    case 6:
+        paintFigure(5);
+        glTranslatef(0,0,2);
+        paintLine(2,0.2);
+        glTranslatef(0,0,-2);
+        break;
+    case 7:
+        paintFigure(1);
+        paintLine(0.2, 1);
+        break;
+    case 8:
+        paintFigure(0);
+        glTranslatef(0,0,2);
+        paintLine(0.2,1);
+        glTranslatef(0,0,-2);
+        break;
+    case 9:
+        glRotatef(180,0,1,0);
+        glTranslatef(0,0,-4);
+        paintFigure(6);
+        glTranslatef(0,0,4);
+        glRotatef(-180,0,1,0);
+        break;
+    }
+}
+void OGLWidget::paintWall(double h, double w, float x, float z){
+    glTranslatef(x,0,z);
+    glColor3f(222,42,255);
+    glBegin(GL_QUADS); //unten
+        glNormal3f(0,1,0);
+        glVertex3f(-0.5*w,0,-0.5*h);
+        glVertex3f(0.5*w,0,-0.5*h);
+        glVertex3f(0.5*w,0,0.5*h);
+        glVertex3f(-0.5*w,0,0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //oben
+        glColor3f(0,165,158);
+        glNormal3f(0,1,0);
+        glVertex3f(-0.5*w,0.5,-0.5*h);
+        glVertex3f(0.5*w,0.5,-0.5*h);
+        glVertex3f(0.5*w,0.5,0.5*h);
+        glVertex3f(-0.5*w,0.5,0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //vorne
+        glNormal3f(0,0,1);
+        glVertex3f(-0.5*w,0,0.5*h);
+        glVertex3f(0.5*w,0,0.5*h);
+        glVertex3f(0.5*w,0.5,0.5*h);
+        glVertex3f(-0.5*w,0.5,0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //hinten
+        glNormal3f(0,0,1);
+        glVertex3f(-0.5*w,0,-0.5*h);
+        glVertex3f(0.5*w,0,-0.5*h);
+        glVertex3f(0.5*w,0.5,-0.5*h);
+        glVertex3f(-0.5*w,0.5,-0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //links
+        glNormal3f(1,0,0);
+        glVertex3f(-0.5*w,0,0.5*h);
+        glVertex3f(-0.5*w,0,-0.5*h);
+        glVertex3f(-0.5*w,0.5,-0.5*h);
+        glVertex3f(-0.5*w,0.5,0.5*h);
+    glEnd();
+    glBegin(GL_QUADS); //rechts
+        glNormal3f(1,0,0);
+        glVertex3f(0.5*w,0,0.5*h);
+        glVertex3f(0.5*w,0,-0.5*h);
+        glVertex3f(0.5*w,0.5,-0.5*h);
+        glVertex3f(0.5*w,0.5,0.5*h);
+    glEnd();
+    glTranslatef(-x,0,-z);
 }

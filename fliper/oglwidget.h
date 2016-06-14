@@ -70,7 +70,9 @@ protected:
     int zoom;       // Zoom factor (0..200, 100 for 1:1)
     int unfold;     // Unfolding position (0..100, 0 closed
     int faa;
+    int fad;
     int punkte;
+    double wandx, wandz, wandr;
     boolean drawable;
     QPoint lastpos; // Last position of mouse pressed, used for dragging
     boolean slowmo;
@@ -80,11 +82,15 @@ protected:
     void paintRectangle(float w, float h);
     void paintRectangle(float w, float h, int alpha);
     void paintCylinder(float r, float h);
-    void paintCircle(float r, int alpha, int y);
+    void paintCircle(float r, int alpha);
     void paintTriangle(float r, int alpha);
     void paintFlipperArm(float w, float l, float h);
     void paintSquare(float s);
     void paintCube(float s);
+    void paintScore(int i);
+    void paintFigure(int i);
+    void paintLine(double h, double w);
+    void paintWall(double h, double w, float x, float y);
     boolean aufStrecke(float xt, float zt);
     boolean closeTo(int i, int j);
 };
