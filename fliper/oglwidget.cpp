@@ -18,7 +18,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     rotz = 0;
     zoom = 100;
     ox, oz, vx, vz, ax, az = 0;
-    oz = -6;
+
     perspective = true;
     cy_x = 3;
     cy_z = 4;
@@ -199,36 +199,50 @@ void OGLWidget::paintGL()
             vx = -vx;
             //ax = -ax;
         }
-        if(-6.5 < oz+vz*0.1 && oz+vz*0.1 <6.5){
+        if(oz+vz*0.1 <6.5){
 
         }else{
             vz = 0;
             az = 0;
         }
+        if(-6.5 < oz+vz*0.1){
+
+        }else{
+            vz = -vz;
+        }
 
         //Zusammenstoß mit Cube
         if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
-            vx = 0;
-            vz = 0;
+            //einfallswinkel gleich ausfallswinkel
+            double alpha = acos((-vx)/sqrt(vx*vx+vz*vz)*1);
+            double vxneu = cos(alpha)*(-1)-sin(alpha)*0;
+            double vzneu = sin(alpha)*(-1)+cos(alpha)*0;
+            vx = vxneu;
+            vz = vzneu;
         }
          //Zusammenstoß mit Cylinder
         double abstandx = cy_x - ox+vx*0.1;
         double abstandz = cy_z - oz+vz*0.1;
-        if(abstandx >= -1.25 && abstandx <= 1.25 && abstandz >= -1.25 && abstandz <= 1.25){
-            vx = 0;
-            vz = 0;
+        if(abstandx >= -1.2 && abstandx <= 1.2 && abstandz >= -1.2 && abstandz <= 1.2){
+            //abprallwinkel immer 90°
+            double alpha = 90.0;
+            double vxneu = cos(alpha)*vx-sin(alpha)*vz;
+            double vzneu = sin(alpha)*vx+cos(alpha)*vz;
+            vx = vxneu;
+            vz = vzneu;
+            //WIESO???????????????? :'(
         }
         //Punkte durch pinken Kreis
        abstandx = (-3.5) - ox+vx*0.1;
        abstandz = (-5.5) - oz+vz*0.1;
        if(abstandx >= -1 && abstandx <= 1 && abstandz >= -1 && abstandz <= 1){
             punkte += 1;
-            std::cout<<punkte<<std::endl;
+            //std::cout<<punkte<<std::endl;
        }
 
         //bande rechts
-        double brxt = ((ox+vx*0.1)+1 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
-        double brzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
+        double brxt = ((ox+vx*0.1)+0.5 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
+        double brzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
         //std::cout<< "brxt: "<<brxt<<" brzt: "<<brzt<<std::endl;
         if(aufStrecke(brxt, brzt)){
             //std::cout<<vx<<" "<<vz<<std::endl;
@@ -239,12 +253,12 @@ void OGLWidget::paintGL()
                 vx = 1/laenge *vx;
                 vz = 1/laenge *vz;
             }
-            std::cout<<"bande rechts getroffen "<< brxt << " " <<brzt<< " " <<vx << " " <<vz<<std::endl;
+            //std::cout<<"bande rechts getroffen "<< brxt << " " <<brzt<< " " <<vx << " " <<vz<<std::endl;
         }
 
         //bande links
-        double blxt = ((ox+vx*0.1)-1 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
-        double blzt = ((oz+vz*0.1)+1 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
+        double blxt = ((ox+vx*0.1)-0.5 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
+        double blzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
         //std::cout<<"blxt: " <<blxt<<" blzt: "<<blzt<<std::endl;
         if(aufStrecke(blxt, blzt)){
             vx = -(-0.5*10 + 0.5*3)*0.5;
@@ -258,11 +272,37 @@ void OGLWidget::paintGL()
         }
 
         //flipper arm
-        double paxt = ((ox+vx*0.1) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14))/((cos(faa)*0.5*3+ sin(faa)*(0.5*14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14));//pinball arm x t-wert
-        double pazt = ((oz+vz*0.1)+1 - (sin(faa)*0.5*3 + cos(faa)*0.5*14))/((-sin(faa)*0.5*3+cos(faa)*(0.5*14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*0.5*14));//pinball arm z t-wert
+        //neue hoffentlich richtige berechnung sonst gibt's tote
+        double paxt = ((ox+vx*0.1) - 3)/((-6)*cos(faa)-0.5*sin(faa));
+        double pazt = ((oz+vz*0.1)+0.5 - 6.5)/((-6)*sin(faa)+0.5*cos(faa));
+        //normale zum flipperarm
+        double nx = (-6)*cos(90+faa)-0.5*sin(90+faa);
+        double nz = (-6)*sin(90+faa)+0.5*cos(90+faa);
+        laenge = sqrt((nx*nx + 0*0 + nz*nz));
+        if(laenge != 0){ //normalisieren
+            nx = 1/laenge *nx;
+            nz = 1/laenge *nz;
+        }
+        //neue andere berechnung
+        //double paxt2 = ((ox+vx*0.1) - 3)/((3+cos(faa)*((-3)-3)-sin(faa)*(7-6.5))-3);
+        //double pazt2 = ((oz+vz*0.1)+0.5 - 6.5)/((6.5+sin(faa)*((-3)-3)+cos(faa)*(7-6.5))-6.5);
+        std::cout<<paxt<<"  "<<pazt<<std::endl;
+        //alte falsche berechnung
+        //double paxt = ((ox+vx*0.1) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14))/((cos(faa)*0.5*3+ sin(faa)*(0.5*14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14));//pinball arm x t-wert
+        //double pazt = ((oz+vz*0.1)+1 - (sin(faa)*0.5*3 + cos(faa)*0.5*14))/((-sin(faa)*0.5*3+cos(faa)*(0.5*14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*0.5*14));//pinball arm z t-wert
         if(aufStrecke(paxt, pazt)){
-            vx = -((cos(faa)*0.5*3+ sin(faa)*(14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*7));
-            vz = (-sin(faa)*0.5*3+cos(faa)*(14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*7);
+            if(!up){
+                //runter rollen
+                vx = -((cos(faa)*0.5*3+ sin(faa)*(14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*7));
+                vz = (-sin(faa)*0.5*3+cos(faa)*(14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*7);
+            }else{
+                //abprallen
+                double alpha = acos((vx*nx+vz*nz)/sqrt(vx*vx+vz*vz)*sqrt(nx*nx+nz*nz));
+                double vxneu = cos(alpha)*nx-sin(alpha)*nz;
+                double vzneu = sin(alpha)*nx+cos(alpha)*nz;
+                vx = vxneu;
+                vz = vzneu;
+            }
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
             if(laenge != 0){ //normalisieren
                 vx = 1/laenge *vx;
@@ -278,18 +318,22 @@ void OGLWidget::paintGL()
         }
 
         //wand
-        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 <= wandz-0.1){ //zusammenstoß von oben
+        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 >= wandz-0.1 && (oz+vz*0.1)+0.5 < wandz+0.1){ //zusammenstoß von oben
             if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
-
+                vz = 0;
+                vx = 0;
+            }else{
+                vz = 0;
+                vx = wandr;
             }
-            vz = 0;
-            vx = wandr;
+
         }
-        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 >= wandz+0.1){ //zusammenstoß von unten
+        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 <= wandz+0.1 && (oz+vz*0.1)-0.5 > wandz-0.1){ //zusammenstoß von unten
             vz = 1;
         }
 
         //TODO hier richtige schwerkraft einbauen
+        //vz = vz + az;
         laenge = sqrt((vx*vx + 0*0 + vz*vz));
         if(laenge != 0){//normalisieren
                    vx = 1/laenge *vx;
@@ -496,6 +540,9 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
                 fad = +1;
                 //positionsaenderung fuer flipperarm
             }
+        break;
+        case Qt::Key_M:
+            std::cout<<"ETWA HIER! MARKER!!"<<std::endl;
         break;
         case Qt::Key_P:
             perspective = !perspective;
