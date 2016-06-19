@@ -42,9 +42,6 @@ public slots:
     // Set zoom factor
     void setZoom( int newzoom );
 
-    // Set unfolding position
-    void setUnfold( int newunfold );
-
 protected:
     void initializeGL();
     void resizeGL(int w, int h);
@@ -68,7 +65,6 @@ protected:
     int roty;
     int rotz;
     int zoom;       // Zoom factor (0..200, 100 for 1:1)
-    int unfold;     // Unfolding position (0..100, 0 closed
     int faa;
     int fad;
     int punkte;
