@@ -109,7 +109,6 @@ void OGLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         case 4: _t->setCylinderX((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 5: _t->setCylinderZ((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 6: _t->setStart((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 7: _t->setZoom((*reinterpret_cast< int(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {

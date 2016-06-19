@@ -41,8 +41,6 @@ public slots:
     void setCylinderZ( int newrz );
     void setStart(bool bla);
 
-    // Set zoom factor
-    void setZoom( int newzoom );
 
 protected:
     void initializeGL();
