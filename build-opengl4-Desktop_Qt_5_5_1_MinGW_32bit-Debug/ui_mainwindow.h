@@ -13,12 +13,13 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
-#include <QtWidgets/QDial>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSlider>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QVBoxLayout>
@@ -34,16 +35,15 @@ public:
     QVBoxLayout *verticalLayout;
     OGLWidget *glwidget;
     QGridLayout *gridLayout;
-    QLabel *lbZRot;
-    QDial *yRot;
-    QLabel *lbYRot;
-    QDial *xRot;
-    QDial *zRot;
-    QLabel *lbXRot;
-    QDial *unfold;
-    QLabel *lbUnfold;
-    QDial *zoom;
-    QLabel *lbZoom;
+    QSlider *cube_z;
+    QSlider *cylinder_z;
+    QLabel *label;
+    QSlider *cube_x;
+    QLabel *label_2;
+    QSlider *cylinder_x;
+    QLabel *label_3;
+    QLabel *label_4;
+    QPushButton *start_button;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -73,72 +73,66 @@ public:
         gridLayout = new QGridLayout();
         gridLayout->setSpacing(6);
         gridLayout->setObjectName(QStringLiteral("gridLayout"));
-        lbZRot = new QLabel(centralWidget);
-        lbZRot->setObjectName(QStringLiteral("lbZRot"));
+        gridLayout->setContentsMargins(10, 10, 10, -1);
+        cube_z = new QSlider(centralWidget);
+        cube_z->setObjectName(QStringLiteral("cube_z"));
+        cube_z->setMinimum(-60);
+        cube_z->setMaximum(70);
+        cube_z->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(lbZRot, 0, 3, 1, 1, Qt::AlignHCenter);
+        gridLayout->addWidget(cube_z, 1, 1, 1, 1);
 
-        yRot = new QDial(centralWidget);
-        yRot->setObjectName(QStringLiteral("yRot"));
-        yRot->setMaximum(360);
-        yRot->setValue(0);
-        yRot->setWrapping(true);
-        yRot->setNotchesVisible(false);
+        cylinder_z = new QSlider(centralWidget);
+        cylinder_z->setObjectName(QStringLiteral("cylinder_z"));
+        cylinder_z->setMinimum(-64);
+        cylinder_z->setMaximum(64);
+        cylinder_z->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(yRot, 1, 2, 1, 1);
+        gridLayout->addWidget(cylinder_z, 1, 3, 1, 1);
 
-        lbYRot = new QLabel(centralWidget);
-        lbYRot->setObjectName(QStringLiteral("lbYRot"));
+        label = new QLabel(centralWidget);
+        label->setObjectName(QStringLiteral("label"));
 
-        gridLayout->addWidget(lbYRot, 0, 2, 1, 1, Qt::AlignHCenter);
+        gridLayout->addWidget(label, 0, 0, 1, 1);
 
-        xRot = new QDial(centralWidget);
-        xRot->setObjectName(QStringLiteral("xRot"));
-        xRot->setMaximum(360);
-        xRot->setWrapping(true);
+        cube_x = new QSlider(centralWidget);
+        cube_x->setObjectName(QStringLiteral("cube_x"));
+        cube_x->setMinimum(-50);
+        cube_x->setMaximum(40);
+        cube_x->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(xRot, 1, 1, 1, 1);
+        gridLayout->addWidget(cube_x, 0, 1, 1, 1);
 
-        zRot = new QDial(centralWidget);
-        zRot->setObjectName(QStringLiteral("zRot"));
-        zRot->setMaximum(360);
-        zRot->setWrapping(true);
+        label_2 = new QLabel(centralWidget);
+        label_2->setObjectName(QStringLiteral("label_2"));
 
-        gridLayout->addWidget(zRot, 1, 3, 1, 1);
+        gridLayout->addWidget(label_2, 1, 0, 1, 1);
 
-        lbXRot = new QLabel(centralWidget);
-        lbXRot->setObjectName(QStringLiteral("lbXRot"));
+        cylinder_x = new QSlider(centralWidget);
+        cylinder_x->setObjectName(QStringLiteral("cylinder_x"));
+        cylinder_x->setMinimum(-44);
+        cylinder_x->setMaximum(44);
+        cylinder_x->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(lbXRot, 0, 1, 1, 1, Qt::AlignHCenter);
+        gridLayout->addWidget(cylinder_x, 0, 3, 1, 1);
 
-        unfold = new QDial(centralWidget);
-        unfold->setObjectName(QStringLiteral("unfold"));
-        unfold->setMaximum(100);
-        unfold->setWrapping(false);
-        unfold->setNotchesVisible(false);
+        label_3 = new QLabel(centralWidget);
+        label_3->setObjectName(QStringLiteral("label_3"));
 
-        gridLayout->addWidget(unfold, 1, 0, 1, 1);
+        gridLayout->addWidget(label_3, 0, 2, 1, 1);
 
-        lbUnfold = new QLabel(centralWidget);
-        lbUnfold->setObjectName(QStringLiteral("lbUnfold"));
+        label_4 = new QLabel(centralWidget);
+        label_4->setObjectName(QStringLiteral("label_4"));
 
-        gridLayout->addWidget(lbUnfold, 0, 0, 1, 1, Qt::AlignHCenter);
-
-        zoom = new QDial(centralWidget);
-        zoom->setObjectName(QStringLiteral("zoom"));
-        zoom->setMaximum(200);
-        zoom->setValue(100);
-        zoom->setWrapping(false);
-
-        gridLayout->addWidget(zoom, 1, 4, 1, 1);
-
-        lbZoom = new QLabel(centralWidget);
-        lbZoom->setObjectName(QStringLiteral("lbZoom"));
-
-        gridLayout->addWidget(lbZoom, 0, 4, 1, 1, Qt::AlignHCenter);
+        gridLayout->addWidget(label_4, 1, 2, 1, 1);
 
 
         verticalLayout->addLayout(gridLayout);
+
+        start_button = new QPushButton(centralWidget);
+        start_button->setObjectName(QStringLiteral("start_button"));
+
+        verticalLayout->addWidget(start_button);
 
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
@@ -160,11 +154,11 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0));
-        lbZRot->setText(QApplication::translate("MainWindow", "Z", 0));
-        lbYRot->setText(QApplication::translate("MainWindow", "Y", 0));
-        lbXRot->setText(QApplication::translate("MainWindow", "X", 0));
-        lbUnfold->setText(QApplication::translate("MainWindow", "Unfold", 0));
-        lbZoom->setText(QApplication::translate("MainWindow", "Zoom", 0));
+        label->setText(QApplication::translate("MainWindow", "Cube X", 0));
+        label_2->setText(QApplication::translate("MainWindow", "Cube Z", 0));
+        label_3->setText(QApplication::translate("MainWindow", "Cylinder X", 0));
+        label_4->setText(QApplication::translate("MainWindow", "Cylinder Z", 0));
+        start_button->setText(QApplication::translate("MainWindow", "Start", 0));
     } // retranslateUi
 
 };

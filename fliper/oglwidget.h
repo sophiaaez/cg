@@ -35,9 +35,11 @@ signals:
 public slots:
     void stepAnimation();
     // Set the rotation angles
-    void setRotX( int newrx );
-    void setRotY( int newry );
-    void setRotZ( int newrz );
+    void setCubeX( int newrx );
+    void setCubeZ( int newry );
+    void setCylinderX( int newrz );
+    void setCylinderZ( int newrz );
+    void setStart(bool bla);
 
     // Set zoom factor
     void setZoom( int newzoom );

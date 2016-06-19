@@ -17,13 +17,9 @@ OGLWidget::OGLWidget(QWidget *parent)
     roty = 0;
     rotz = 0;
     zoom = 100;
-    ox, oz, vx, vz, ax, az = 0;
+    ox, oz, vx, vz, ax, az, cu_x, cu_z, cy_x, cy_z = 0;
     oz =-6;
     perspective = true;
-    cy_x = 3;
-    cy_z = 4;
-    cu_x = -3;
-    cu_z = -4;
     done = false;
     up = false;
     faa = 0; //Flipper arm alpha
@@ -47,28 +43,47 @@ void OGLWidget::stepAnimation()
 }
 
 
-void OGLWidget::setRotX(int newrx)
+void OGLWidget::setCubeX(int newrx)
 {
-    rotx = newrx;
-    update();
+    if(!done){
+        cu_x = 0.1* newrx;
+        update();
+    }
+
 }
 
-void OGLWidget::setRotY(int newry)
+void OGLWidget::setCubeZ(int newry)
 {
-    roty = newry;
-    update();
+    if(!done){
+        cu_z = 0.1* newry;
+        update();
+    }
+
 }
 
-void OGLWidget::setRotZ(int newrz)
+void OGLWidget::setCylinderX(int newrz)
 {
-    rotz = newrz;
-    update();
+    if(!done){
+        cy_x = 0.1*newrz;
+        update();
+    }
 }
 
-void OGLWidget::setZoom(int newzoom)
+void OGLWidget::setCylinderZ(int newrz)
 {
-    zoom = newzoom;
-    update();
+    if(!done){
+        cy_z = 0.1*newrz;
+        update();
+    }
+
+}
+
+void OGLWidget::setStart(bool bla){
+    std::cout<<bla;
+    if(!done){
+        done = true;
+        vz = 1;
+    }
 }
 
 
@@ -518,46 +533,6 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
 
     switch(event->key())
     {
-        case Qt::Key_Up:
-            if(!done && cy_z-0.1 > -6.4){
-                cy_z -= 0.1;
-            }
-            break;
-        case Qt::Key_Down:
-            if(!done&& cy_z+0.1 < 6.4){
-                cy_z += 0.1;
-            }
-            break;
-        case Qt::Key_Left:
-            if(!done&& cy_x-0.1 > -4.5){
-                cy_x -= 0.1;
-            }
-            break;
-        case Qt::Key_Right:
-            if(!done&& cy_x+0.1 < 4.5){
-                cy_x += 0.1;
-            }
-            break;
-        case Qt::Key_E:
-            if(!done&& cu_z-0.1 > -6){
-                cu_z -= 0.1;
-            }
-            break;
-        case Qt::Key_D:
-            if(!done&& cu_z+0.1 < 7){
-                cu_z += 0.1;
-            }
-            break;
-        case Qt::Key_S:
-            if(!done&& cu_x-0.1 > -5){
-                cu_x -= 0.1;
-            }
-            break;
-        case Qt::Key_F:
-            if(!done&& cu_x+0.1 < 4.1){
-                cu_x += 0.1;
-            }
-            break;
         case Qt::Key_Return:
             if(!done){
                 vz = 1;

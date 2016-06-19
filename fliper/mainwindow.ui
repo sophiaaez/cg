@@ -30,104 +30,103 @@
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="3" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="lbZRot">
-        <property name="text">
-         <string>Z</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QDial" name="yRot">
-        <property name="maximum">
-         <number>360</number>
-        </property>
-        <property name="value">
-         <number>0</number>
-        </property>
-        <property name="wrapping">
-         <bool>true</bool>
-        </property>
-        <property name="notchesVisible">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="lbYRot">
-        <property name="text">
-         <string>Y</string>
-        </property>
-       </widget>
-      </item>
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
       <item row="1" column="1">
-       <widget class="QDial" name="xRot">
-        <property name="maximum">
-         <number>360</number>
+       <widget class="QSlider" name="cube_z">
+        <property name="minimum">
+         <number>-60</number>
         </property>
-        <property name="wrapping">
-         <bool>true</bool>
+        <property name="maximum">
+         <number>70</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QDial" name="zRot">
-        <property name="maximum">
-         <number>360</number>
+       <widget class="QSlider" name="cylinder_z">
+        <property name="minimum">
+         <number>-64</number>
         </property>
-        <property name="wrapping">
-         <bool>true</bool>
+        <property name="maximum">
+         <number>64</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
-      <item row="0" column="1" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="lbXRot">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>X</string>
+         <string>Cube X</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSlider" name="cube_x">
+        <property name="minimum">
+         <number>-50</number>
+        </property>
+        <property name="maximum">
+         <number>40</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QDial" name="unfold">
-        <property name="maximum">
-         <number>100</number>
-        </property>
-        <property name="wrapping">
-         <bool>false</bool>
-        </property>
-        <property name="notchesVisible">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="lbUnfold">
+       <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Unfold</string>
+         <string>Cube Z</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
-       <widget class="QDial" name="zoom">
+      <item row="0" column="3">
+       <widget class="QSlider" name="cylinder_x">
+        <property name="minimum">
+         <number>-44</number>
+        </property>
         <property name="maximum">
-         <number>200</number>
+         <number>44</number>
         </property>
-        <property name="value">
-         <number>100</number>
-        </property>
-        <property name="wrapping">
-         <bool>false</bool>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
-      <item row="0" column="4" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="lbZoom">
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Zoom</string>
+         <string>Cylinder X</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Cylinder Z</string>
         </property>
        </widget>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="QPushButton" name="start_button">
+      <property name="text">
+       <string>Start</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
