@@ -14,7 +14,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->cylinder_x, SIGNAL(valueChanged(int)), ui->glwidget, SLOT(setCylinderX(int)));
     connect(ui->cylinder_z, SIGNAL(valueChanged(int)), ui->glwidget, SLOT(setCylinderZ(int)));
     connect(ui->start_button, SIGNAL(clicked(bool)), ui->glwidget, SLOT(setStart(bool)));
-
+    connect(ui->flip, SIGNAL(clicked(bool)), ui->glwidget, SLOT(setFlip(bool)));
+    connect(ui->perspective, SIGNAL(clicked(bool)), ui->glwidget, SLOT(setPerspective(bool)));
 
 
     // Handle any rotation change requests from mouse dragging and key presses

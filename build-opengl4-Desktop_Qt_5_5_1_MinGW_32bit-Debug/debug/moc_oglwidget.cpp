@@ -20,7 +20,7 @@
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_OGLWidget_t {
     QByteArrayData data[18];
-    char stringdata0[140];
+    char stringdata0[147];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -45,14 +45,14 @@ QT_MOC_LITERAL(12, 92, 5), // "newrz"
 QT_MOC_LITERAL(13, 98, 12), // "setCylinderZ"
 QT_MOC_LITERAL(14, 111, 8), // "setStart"
 QT_MOC_LITERAL(15, 120, 3), // "bla"
-QT_MOC_LITERAL(16, 124, 7), // "setZoom"
-QT_MOC_LITERAL(17, 132, 7) // "newzoom"
+QT_MOC_LITERAL(16, 124, 7), // "setFlip"
+QT_MOC_LITERAL(17, 132, 14) // "setPerspective"
 
     },
     "OGLWidget\0changeRotation\0\0dx\0dy\0dz\0"
     "stepAnimation\0setCubeX\0newrx\0setCubeZ\0"
     "newry\0setCylinderX\0newrz\0setCylinderZ\0"
-    "setStart\0bla\0setZoom\0newzoom"
+    "setStart\0bla\0setFlip\0setPerspective"
 };
 #undef QT_MOC_LITERAL
 
@@ -62,7 +62,7 @@ static const uint qt_meta_data_OGLWidget[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-       8,   14, // methods
+       9,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -70,16 +70,17 @@ static const uint qt_meta_data_OGLWidget[] = {
        1,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    3,   54,    2, 0x06 /* Public */,
+       1,    3,   59,    2, 0x06 /* Public */,
 
  // slots: name, argc, parameters, tag, flags
-       6,    0,   61,    2, 0x0a /* Public */,
-       7,    1,   62,    2, 0x0a /* Public */,
-       9,    1,   65,    2, 0x0a /* Public */,
-      11,    1,   68,    2, 0x0a /* Public */,
-      13,    1,   71,    2, 0x0a /* Public */,
-      14,    1,   74,    2, 0x0a /* Public */,
-      16,    1,   77,    2, 0x0a /* Public */,
+       6,    0,   66,    2, 0x0a /* Public */,
+       7,    1,   67,    2, 0x0a /* Public */,
+       9,    1,   70,    2, 0x0a /* Public */,
+      11,    1,   73,    2, 0x0a /* Public */,
+      13,    1,   76,    2, 0x0a /* Public */,
+      14,    1,   79,    2, 0x0a /* Public */,
+      16,    1,   82,    2, 0x0a /* Public */,
+      17,    1,   85,    2, 0x0a /* Public */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::Int, QMetaType::Int, QMetaType::Int,    3,    4,    5,
@@ -91,7 +92,8 @@ static const uint qt_meta_data_OGLWidget[] = {
     QMetaType::Void, QMetaType::Int,   12,
     QMetaType::Void, QMetaType::Int,   12,
     QMetaType::Void, QMetaType::Bool,   15,
-    QMetaType::Void, QMetaType::Int,   17,
+    QMetaType::Void, QMetaType::Bool,   15,
+    QMetaType::Void, QMetaType::Bool,   15,
 
        0        // eod
 };
@@ -109,6 +111,8 @@ void OGLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         case 4: _t->setCylinderX((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 5: _t->setCylinderZ((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 6: _t->setStart((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 7: _t->setFlip((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 8: _t->setPerspective((*reinterpret_cast< bool(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -150,13 +154,13 @@ int OGLWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 8)
+        if (_id < 9)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 9;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 8)
+        if (_id < 9)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 8;
+        _id -= 9;
     }
     return _id;
 }

@@ -79,11 +79,23 @@ void OGLWidget::setCylinderZ(int newrz)
 }
 
 void OGLWidget::setStart(bool bla){
-    std::cout<<bla;
+    //std::cout<<bla;
     if(!done){
         done = true;
         vz = 1;
     }
+}
+
+void OGLWidget::setFlip(bool bla){
+    if(!up){
+        up = true;
+        fad = +1;
+        //positionsaenderung fuer flipperarm
+    }
+}
+
+void OGLWidget::setPerspective(bool bla){
+    perspective = !perspective;
 }
 
 
@@ -110,13 +122,13 @@ void OGLWidget::initializeGL()
 
 void OGLWidget::paintGL()
 {
-
-    double a = animstep;   // rotate one degree with each step
+    double a = animstep;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
     if(perspective){
         glOrtho(-10,10,-10,10,-100,100);
+        glRotatef(60,1,0,0);
     }else{
         glFrustum(-10,10,0,5,5,100);
     }
@@ -221,30 +233,39 @@ void OGLWidget::paintGL()
         }
 
         //Zusammenstoß mit Cube
-        if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
+        if(done && cu_x <= ox+vx*0.1 && ox+vx*0.1 <= cu_x +1 && cu_z-1 <= oz+vz*0.1 && oz+vz*0.1 <= cu_z){
+            std::cout<<"IRGENDWAS"<<std::endl;
             double vxneu, vzneu, alpha = 0;
             //rechts oder links
-            if(ox <= cu_x -1.5 || ox >= cu_x +1.5){
-                if(ox <= cu_x -1.5){ //links
+                if(ox < cu_x){ //links
                     alpha = acos((-vx)/sqrt(vx*vx+vz*vz)*1);
+                    if(alpha >= 3.14){
+                        alpha = alpha - M_PI;
+                    }
                     vxneu = cos(alpha)*(-1)-sin(alpha)*0;
                     vzneu = sin(alpha)*(-1)+cos(alpha)*0;
-                }else{ //rechts
+                }else if(cu_x+1 < ox){ //rechts
                     alpha = acos((vx)/sqrt(vx*vx+vz*vz)*1);
+                    if(alpha >= 3.14){
+                        alpha = alpha - M_PI;
+                    }
                     vxneu = cos(alpha)*(1)-sin(alpha)*0;
                     vzneu = sin(alpha)*(1)+cos(alpha)*0;
+                }else if(oz < cu_z-1){//oben
+                    alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*(1));
+                    if(alpha >= 3.14){
+                        alpha = alpha - M_PI;
+                    }
+                    vxneu = cos(alpha)*0 - sin(alpha)*(-1);
+                    vzneu = sin(alpha)*0 + cos(alpha)*(-1);
+                }else if(cu_z < oz){// unten
+                    alpha = acos((vx*0+vz*(1))/sqrt(vx*vx+vz*vz)*1);
+                    if(alpha >= 3.14){
+                        alpha = alpha - M_PI;
+                    }
+                    vxneu = cos(alpha)*0-sin(alpha)*(1);
+                    vzneu = sin(alpha)*0+cos(alpha)*(1);
                 }
-            }else{ //oben oder unten
-                if(oz <= cu_z-1.5){//oben
-                    alpha = acos((vx*0+vz*1)/sqrt(vx*vx+vz*vz)*1);
-                    vxneu = cos(alpha)*0-sin(alpha)*1;
-                    vzneu = sin(alpha)*0+cos(alpha)*1;
-                }else{// unten
-                    alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*1);
-                    vxneu = cos(alpha)*0-sin(alpha)*(-1);
-                    vzneu = sin(alpha)*0+cos(alpha)*(-1);
-                }
-            }
             vx = vxneu;
             vz = vzneu;
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
@@ -256,15 +277,17 @@ void OGLWidget::paintGL()
          //Zusammenstoß mit Cylinder
         double abstandx = cy_x - ox+vx*0.1;
         double abstandz = cy_z - oz+vz*0.1;
+        double abs
         if(abstandx >= -1.2 && abstandx <= 1.2 && abstandz >= -1.2 && abstandz <= 1.2){
             //abprallwinkel immer 90°
-            double alpha = 90.0;
+            double alpha = 90.0 * M_PI/180;
             double vxneu = cos(alpha)*vx-sin(alpha)*vz;
             double vzneu = sin(alpha)*vx+cos(alpha)*vz;
-            vx = vxneu;
-            vz = vzneu;
-            //WIESO???????????????? :'(
+            vx = -1;
+            vz = 0;
+            std::cout<<vx<<" "<<vz<<std::endl;
         }
+
         //Punkte durch pinken Kreis
        abstandx = (-3.5) - ox+vx*0.1;
        abstandz = (-5.5) - oz+vz*0.1;
@@ -334,33 +357,33 @@ void OGLWidget::paintGL()
                 vz = (-6)*sin(faa)+0.5*cos(faa);
             }else{
                 //abprallen
-                double alpha = acos((vx*nx+vz*nz)/sqrt(vx*vx+vz*vz)*sqrt(nx*nx+nz*nz));
-                double vxneu = cos(alpha)*nx-sin(alpha)*nz;
-                double vzneu = sin(alpha)*nx+cos(alpha)*nz;
-                vx = vxneu;
-                vz = vzneu;
+                //double alpha = acos((vx*nx+vz*nz)/sqrt(vx*vx+vz*vz)*sqrt(nx*nx+nz*nz));
+                //double vxneu = cos(alpha)*nx-sin(alpha)*nz;
+                //double vzneu = sin(alpha)*nx+cos(alpha)*nz;
+                vx = nx;
+                vz = nz;
             }
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
             if(laenge != 0){ //normalisieren
                 vx = 1/laenge *vx;
                 vz = 1/laenge *vz;
             }
-            std::cout<<"flipperarm getroffen "<<paxt<<" "<<pazt<<" "<<vx<<" "<<vz<<std::endl;
+            //std::cout<<"flipperarm getroffen "<<paxt<<" "<<pazt<<" "<<vx<<" "<<vz<<std::endl;
         }
 
         //kollision mit dem kleinen teil der linken bande
         if((ox+vx*0.1)-0.5 <= -0.5*3 && (oz+vz*0.1) > ((0.5*14)-1)){
-            std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
+            //std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
             vx = 0;
             vz = 0;
         }
         if(up && (ox)-0.6 <= -0.5*3 && (oz)+0.5 > ((0.5*14)-1)){
-            std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
+            //std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
             vx = 0;
             vz = -1;
         }
         //wand
-        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 >= wandz-0.1 && (oz+vz*0.1)+0.5 < wandz+0.1){ //zusammenstoß von oben
+        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 <= wandz-0.1){ //zusammenstoß von oben
             if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
                 vz = 0;
                 vx = 0;
@@ -370,7 +393,7 @@ void OGLWidget::paintGL()
             }
 
         }
-        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 <= wandz+0.1 && (oz+vz*0.1)-0.5 > wandz-0.1){ //zusammenstoß von unten
+        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 <= wandz+0.1){ //zusammenstoß von unten
             vz = 1;
         }
 

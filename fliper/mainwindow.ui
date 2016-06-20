@@ -126,6 +126,29 @@
       <property name="text">
        <string>Start</string>
       </property>
+      <property name="shortcut">
+       <string>Enter</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="flip">
+      <property name="text">
+       <string>Flip</string>
+      </property>
+      <property name="shortcut">
+       <string>Space</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="perspective">
+      <property name="text">
+       <string>Perspective</string>
+      </property>
+      <property name="shortcut">
+       <string>P</string>
+      </property>
      </widget>
     </item>
    </layout>

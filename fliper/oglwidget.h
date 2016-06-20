@@ -40,6 +40,8 @@ public slots:
     void setCylinderX( int newrz );
     void setCylinderZ( int newrz );
     void setStart(bool bla);
+    void setFlip(bool bla);
+    void setPerspective(bool bla);
 
 
 protected:

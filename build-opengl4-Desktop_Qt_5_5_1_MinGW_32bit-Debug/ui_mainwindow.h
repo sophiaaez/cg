@@ -19,6 +19,7 @@
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QRadioButton>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QToolBar>
@@ -44,6 +45,8 @@ public:
     QLabel *label_3;
     QLabel *label_4;
     QPushButton *start_button;
+    QPushButton *flip;
+    QRadioButton *perspective;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -134,6 +137,16 @@ public:
 
         verticalLayout->addWidget(start_button);
 
+        flip = new QPushButton(centralWidget);
+        flip->setObjectName(QStringLiteral("flip"));
+
+        verticalLayout->addWidget(flip);
+
+        perspective = new QRadioButton(centralWidget);
+        perspective->setObjectName(QStringLiteral("perspective"));
+
+        verticalLayout->addWidget(perspective);
+
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
@@ -159,6 +172,11 @@ public:
         label_3->setText(QApplication::translate("MainWindow", "Cylinder X", 0));
         label_4->setText(QApplication::translate("MainWindow", "Cylinder Z", 0));
         start_button->setText(QApplication::translate("MainWindow", "Start", 0));
+        start_button->setShortcut(QApplication::translate("MainWindow", "Enter", 0));
+        flip->setText(QApplication::translate("MainWindow", "Flip", 0));
+        flip->setShortcut(QApplication::translate("MainWindow", "Space", 0));
+        perspective->setText(QApplication::translate("MainWindow", "Perspective", 0));
+        perspective->setShortcut(QApplication::translate("MainWindow", "P", 0));
     } // retranslateUi
 
 };
