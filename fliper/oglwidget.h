@@ -70,6 +70,8 @@ protected:
     int faa;
     int fad;
     int punkte;
+    boolean cy_just_hit;
+    boolean schwerkraft;
     double wandx, wandz, wandr;
     boolean drawable;
     QPoint lastpos; // Last position of mouse pressed, used for dragging
