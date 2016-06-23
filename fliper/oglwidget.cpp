@@ -30,6 +30,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     wandr = 0.1;//Richtung der Wand für links - und für rechts + werte))
     cy_just_hit = false;
     schwerkraft = true;
+    light = 0;
 }
 
 OGLWidget::~OGLWidget()
@@ -80,11 +81,11 @@ void OGLWidget::setCylinderZ(int newrz)
 }
 
 void OGLWidget::setStart(bool bla){
-    //std::cout<<bla;
     if(!done){
         done = true;
         vz = 1;
     }
+    update();
 }
 
 void OGLWidget::setFlip(bool bla){
@@ -93,10 +94,16 @@ void OGLWidget::setFlip(bool bla){
         fad = +1;
         //positionsaenderung fuer flipperarm
     }
+    update();
 }
 
 void OGLWidget::setPerspective(bool bla){
     perspective = !perspective;
+    update();
+}
+void OGLWidget::setLight(int newlight){
+    light = newlight;
+    update();
 }
 
 
@@ -104,21 +111,32 @@ void OGLWidget::initializeGL()
 {
     initializeOpenGLFunctions();
 
-    // For wireframe replace GL_FILL with GL_LINE
-    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-    glClearColor(0,0,0,0);
-    glClear (GL_COLOR_BUFFER_BIT);
-    glColor3f (1.0, 1.0, 1.0);
-    glShadeModel(GL_SMOOTH);
-   /**glEnable(GL_LIGHTING);
-    float light_pos[] = {10.f,5.f,10.f,0.f};
-    glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
-    float light_diffuse[] = {8.f,8.f,8.f,1.f};
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
-    glEnable(GL_LIGHT1);
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    glEnable(GL_COLOR_MATERIAL);**/
 
+    // Use depth testing and the depth buffer
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    // Calculate color for each pixel fragment
+    glShadeModel(GL_SMOOTH);
+
+    // Enable lighting in scene
+    glEnable(GL_LIGHTING);
+
+    // Set position of light source
+    float light_pos[] = { 10.f, 5.f, 10.f, 0.f };
+    glLightfv(GL_LIGHT1, GL_POSITION, light_pos );
+
+    // Set color for this light source
+    // (We are only specifying a diffuse light source)
+    float light_diffuse[] = { .8f, .8f, .8f, 1.f };
+    glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_diffuse );
+
+    // Turn on this light
+    glEnable(GL_LIGHT1);
+
+    // Use the color of an object for light calculation
+    glColorMaterial( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
+    glEnable(GL_COLOR_MATERIAL);
 }
 
 void OGLWidget::paintGL()
@@ -128,17 +146,16 @@ void OGLWidget::paintGL()
 
     glLoadIdentity();
     if(perspective){
-        glOrtho(-10,10,-10,10,-100,100);
-    }else{
         glOrtho(-15,15,-15,15,-100,100);
         glRotatef(60,1,0,0);
-        //glFrustum(-10,10,0,5,5,100);
+    }else{
+        glOrtho(-10,10,-10,10,-100,100);
     }
-
-    // Apply rotation angles
-    glRotatef(rotx, 1.0f, 0.0f, 0.0f); // Rotate around x axis
-    glRotatef(roty, 0.0f, 1.0f, 0.0f); // Rotate around y axis
-    glRotatef(rotz, 0.0f, 0.0f, 1.0f); // Rotate around z axis
+    // Change light position
+    float light_pos[] = { 10.f * cosf(light*M_PI/180.f),
+                           5.f,
+                          10.f * sinf(light*M_PI/180.f), 0.f };
+    glLightfv(GL_LIGHT1, GL_POSITION,  light_pos);
 
     // Apply scaling
     float scale = zoom/100.0;
@@ -172,10 +189,10 @@ void OGLWidget::paintGL()
     glRotatef(-faa,0,1,0);
     glRotatef(90,0,1,0);
     glTranslatef(-1,0,-7);
-    glTranslatef(-3.5,0,-5.5);
+    glTranslatef(-3.5,0.1,-5.5);
     glColor3f(255,0,150);
     paintCircle(1,1);
-    glTranslatef(3.5,0,5.5);
+    glTranslatef(3.5,-0.1,5.5);
     if(done){
         if(wandr > 0 && wandx+wandr < 4){
             wandx += wandr;
@@ -203,13 +220,10 @@ void OGLWidget::paintGL()
     glTranslatef(ox, 0, oz);
     glScalef(0.5,0.5,0.5);
     glColor3f(0.5,0,0.5);
-    drawSphere(a,35,35);
+    paintSphere(a,35,35);
     glScalef(2,2,2);
     glTranslatef(-ox,0,-oz);
     glPopMatrix();
-
-    //dx = (dx+dxN)*(0.5);
-    //dy = (dy+dyN)*(0.5);
 
     if(done){
         double laenge = sqrt((vx*vx + 0*0 + vz*vz));
@@ -242,7 +256,6 @@ void OGLWidget::paintGL()
         //Zusammenstoß mit Cube
         double abstandcx = ox - cu_x;
         double abstandcz = oz - cu_z;
-        //std::cout<<abstandcx<<" "<<abstandcz<<std::endl;
         if(-1 <= abstandcx && abstandcx <= 1 && -1.6 <= abstandcz && abstandcz <= -1.5){//oben
             std::cout<<"würfel oben"<<std::endl;
             double alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*(1));
@@ -296,18 +309,56 @@ void OGLWidget::paintGL()
             vx = vxneu;
             vz = vzneu;
         }
-
+        //Zusammenstoß mit Cube-ECKE
+        //ecke rechts oben
+        double axor = ox-(cu_x+1); //abstandxeckeobenrechts
+        double azor = oz-(cu_z-1); //abstandzeckeobenrechts
+        double daor = sqrt(axor*axor+azor*azor); // diagonalerabstandobenrechts
+        if(daor <= 0.5){ //radius der kugel ist 0.5
+            std::cout<<"Würfel ecke"<<std::endl;
+            schwerkraft = true;
+            vx = -vx;
+            vz = -vz;
+        }
+        //ecke links oben
+        double axol = ox-(cu_x); //abstandxeckeobenlinks
+        double azol = oz-(cu_z-1); //abstandzeckeobenlinks
+        double daol = sqrt(axol*axol+azol*azol); // diagonalerabstandobenlinks
+        if(daol <= 0.5){ //radius der kugel ist 0.5
+            std::cout<<"Würfel ecke"<<std::endl;
+            schwerkraft = true;
+            vx = -vx;
+            vz = -vz;
+        }
+        //ecke links unten
+        double axul = ox-(cu_x); //abstandxeckeuntenlinks
+        double azul = oz-(cu_z); //abstandzeckeuntenlinks
+        double daul = sqrt(axul*axul+azul*azul); // diagonalerabstanduntenlinks
+        if(daul <= 0.5){ //radius der kugel ist 0.5
+            std::cout<<"Würfel ecke"<<std::endl;
+            schwerkraft = true;
+            vx = -vx;
+            vz = -vz;
+        }
+        //ecke rechts unten
+        double axur = ox-(cu_x+1); //abstandxeckeobenrechts
+        double azur = oz-(cu_z); //abstandzeckeobenrechts
+        double daur = sqrt(axur*axur+azur*azur); // diagonalerabstandobenrechts
+        if(daur <= 0.5){ //radius der kugel ist 0.5
+            std::cout<<"Würfel ecke"<<std::endl;
+            schwerkraft = true;
+            vx = -vx;
+            vz = -vz;
+        }
          //Zusammenstoß mit Cylinder
         double abstandx = cy_x - ox+vx*0.1;
         double abstandz = cy_z - oz+vz*0.1;
         double abstand = sqrt(abstandx*abstandx + abstandz*abstandz);
-        //std::cout<<abstand<<std::endl;
         if(abstand > 1.2){
             cy_just_hit = false;
         }
         if(abstand <= 1.2 && !cy_just_hit){
             std::cout<<"zylinder"<<std::endl;
-            //abprallwinkel immer 90°
             cy_just_hit = true;
             schwerkraft = true;
             double alpha = -135.0 * M_PI/180;
@@ -319,7 +370,7 @@ void OGLWidget::paintGL()
             vzneu = vzzz/1000.0;
             vx = vxneu;
             vz = vzneu;
-            std::cout<<vxneu<<" "<<vzneu<<std::endl;
+
         }
 
         //Punkte durch pinken Kreis
@@ -327,16 +378,16 @@ void OGLWidget::paintGL()
        abstandz = (-5.5) - oz+vz*0.1;
        if(abstandx >= -1 && abstandx <= 1 && abstandz >= -1 && abstandz <= 1){
             punkte += 1;
-            //std::cout<<punkte<<std::endl;
        }
 
         //bande rechts
         double brxt = ((ox+vx*0.1)+0.5 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
         double brzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
-        //std::cout<< "brxt: "<<brxt<<" brzt: "<<brzt<<std::endl;
         if(aufStrecke(brxt, brzt)){
             schwerkraft = false;
             std::cout<<"bande rechts"<<std::endl;
+            ox = ox+vx*0.1;
+            oz = oz+vz*0.1;
             vx = -(0.5*10 - 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3)-(0.5*14-0.5))*0.5;
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
@@ -344,16 +395,16 @@ void OGLWidget::paintGL()
                 vx = 1/laenge *vx;
                 vz = 1/laenge *vz;
             }
-            //std::cout<<"bande rechts getroffen "<< brxt << " " <<brzt<< " " <<vx << " " <<vz<<std::endl;
         }
 
         //bande links
         double blxt = ((ox+vx*0.1)-0.5 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
         double blzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
-        //std::cout<<"blxt: " <<blxt<<" blzt: "<<blzt<<std::endl;
         if(aufStrecke(blxt, blzt)){
             std::cout<<"bande links"<<std::endl;
             schwerkraft = false;
+            ox = ox+vx*0.1;
+            oz = oz+vz*0.1;
             vx = -(-0.5*10 + 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3) - (0.5*14-0.5))*0.5;
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
@@ -374,31 +425,17 @@ void OGLWidget::paintGL()
             nz = 1/laenge *nz;
         }
         double d = (nx*(ox+vx*0.1)+nz*(oz+vz*0.1)+7)/laenge;
-        //neue hoffentlich richtige berechnung sonst gibt's tote
         double paxt = ((ox+vx*0.1) - 3)/((-6)*cos(faa)-0.5*sin(faa));
         double pazt = ((oz+vz*0.1)+0.5 - 6.5)/((-6)*sin(faa)+0.5*cos(faa));
-
-        //neue andere berechnung
-        //double paxt2 = ((ox+vx*0.1) - 3)/((3+cos(faa)*((-3)-3)-sin(faa)*(7-6.5))-3);
-        //double pazt2 = ((oz+vz*0.1)+0.5 - 6.5)/((6.5+sin(faa)*((-3)-3)+cos(faa)*(7-6.5))-6.5);
-        //std::cout<<d<<std::endl;
-        //alte falsche berechnung
-        //double paxt = ((ox+vx*0.1) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14))/((cos(faa)*0.5*3+ sin(faa)*(0.5*14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14));//pinball arm x t-wert
-        //double pazt = ((oz+vz*0.1)+1 - (sin(faa)*0.5*3 + cos(faa)*0.5*14))/((-sin(faa)*0.5*3+cos(faa)*(0.5*14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*0.5*14));//pinball arm z t-wert
         if(d <= 0.2 && paxt <= 1 && paxt >= 0 && pazt <= 1 && pazt >= 0 ){
             std::cout<<"flipperarm"<<std::endl;
             schwerkraft = false;
             if(!up){
                 //runter rollen
-                //vx = -((cos(faa)*0.5*3+ sin(faa)*(14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*7));
-                //vz = (-sin(faa)*0.5*3+cos(faa)*(14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*7);
                 vx = (-6)*cos(faa)-0.5*sin(faa);
                 vz = (-6)*sin(faa)+0.5*cos(faa);
             }else{
                 //abprallen
-                //double alpha = acos((vx*nx+vz*nz)/sqrt(vx*vx+vz*vz)*sqrt(nx*nx+nz*nz));
-                //double vxneu = cos(alpha)*nx-sin(alpha)*nz;
-                //double vzneu = sin(alpha)*nx+cos(alpha)*nz;
                 vx = nx;
                 vz = nz;
                 schwerkraft = true;
@@ -408,7 +445,6 @@ void OGLWidget::paintGL()
                 vx = 1/laenge *vx;
                 vz = 1/laenge *vz;
             }
-            //std::cout<<"flipperarm getroffen "<<paxt<<" "<<pazt<<" "<<vx<<" "<<vz<<std::endl;
         }
 
         //kollision mit dem kleinen teil der linken bande
@@ -419,7 +455,7 @@ void OGLWidget::paintGL()
             vz = 0;
         }
         if(up && (ox)-0.6 <= -0.5*3 && (oz)+0.5 > ((0.5*14)-1)){
-            std::cout<<"was passiert hier eigentlich?"<<std::endl;
+            std::cout<<"bla"<<std::endl;
             vx = 0;
             vz = -1;
         }
@@ -438,15 +474,12 @@ void OGLWidget::paintGL()
             vz = 1;
         }
 
-        //TODO hier richtige schwerkraft einbauen
-        //vz = vz + az;
+
         laenge = sqrt((vx*vx + 0*0 + vz*vz));
         if(laenge != 0){//normalisieren
                    vx = 1/laenge *vx;
                    vz = 1/laenge *vz;
         }
-        //vx = vx + ax * 0.1;
-        //vz = vz + az * 0.1;
         ox = ox + vx * 0.1;
         oz = oz + vz * 0.1;
         if(schwerkraft){
@@ -561,31 +594,6 @@ void OGLWidget::mouseReleaseEvent(QMouseEvent *event)
         az = 0.01;
     }
     done = true;
-    //dxN = event->x() -lastpos.x();
-    //dyN = event->y() -lastpos.y();
-    //while(dx == event->x() -l) &&astpos.x( dy == event->y() -lastpos.y()){
-
-   // }
-//    dx = (dx+dxN)*(0.001);
-//    dy = (dy+dyN)*(0.001);
-//    update();
-    if(dxN > 10){
-        //dxN *= 0.1;
-    }
-    if(dxN > 10){
-        //dxN *= 0.1;
-    }
-    if(dyN > 10){
-        //dyN *= 0.1;
-    }
-    if(dyN > 10){
-        //dyN *= 0.1;
-    }
-
-    //vx = dxN;
-    //vz = dyN;
-    //az = 0.5;
-   // ax = 0.1;
 }
 
 
@@ -623,23 +631,22 @@ void OGLWidget::keyPressEvent(QKeyEvent *event)
     }
 }
 
-void OGLWidget::drawSphere(double r, int lats, int longs) {
-    r = 0.1*animstep;   // rotate one degree with each step
+void OGLWidget::paintSphere(double r, int b, int l) {
+    //r = radius, b = breitengrade, l = laengengrade
+         int i, j;
 
-        int i, j;
-
-        for(i = 0; i <= lats; i++) {
-            double lat0 = M_PI * (-0.5 + (double) (i - 1) / lats);
+        for(i = 0; i <= b; i++) {
+            double lat0 = M_PI * (-0.5 + (double) (i - 1) / b);
             double z0  = sin(lat0);
             double zr0 =  cos(lat0);
 
-            double lat1 = M_PI * (-0.5 + (double) i / lats);
+            double lat1 = M_PI * (-0.5 + (double) i / b);
             double z1 = sin(lat1);
             double zr1 = cos(lat1);
 
          glBegin(GL_QUAD_STRIP);
-         for(j = 0; j <= longs; j++) {
-             double lng = 2 * M_PI * (double) (j - 1) / longs;
+         for(j = 0; j <= l; j++) {
+             double lng = 2 * M_PI * (double) (j - 1) / l;
              double x = cos(lng);
              double y = sin(lng);
              glNormal3f(x * zr0, y * zr0, z0);
@@ -655,115 +662,23 @@ void OGLWidget::drawSphere(double r, int lats, int longs) {
 void OGLWidget::paintCylinder(float r, float h){
     int alpha = 1;
     int amount = 360/alpha;
-    int x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, nx, ny, nz, v1x, v1y, v1z, v2x, v2y, v2z, xp, yp, zp;
-    /**x1 = cos(0)*r;
-    x2 = cos(alpha)*r;
-    x3 = x2;
-    x4 = x1;
-    y1 = 0;
-    y2 = y1;
-    y3 = h;
-    y4 = y3;
-    z1 = 0;
-    z2 = sin(alpha)*r;
-    z3 = z2;
-    z4 = z3;
-    z2 = z1;*/
     paintCircle(r, alpha);
     glTranslatef(0,h,0);
     paintCircle(r, alpha);
     glTranslatef(0,-h,0);
     for(int i = 0; i < amount; i++){
-        /**glBegin(GL_QUADS);
-            glVertex3f(x1,y1,z1);
-            glVertex3f(x2,y2,z2);
-            glVertex3f(x3,y3,z3);
-            glVertex3f(x4,y4,z4);
-            glNormal3f(nx,ny,nz);
-        glEnd();
-        //rotationsmatrix anwenden
-        xp = cos(alpha)*x1 + 0*y1 + sin(alpha)*z1;
-        yp = 0*x1 + 1*y1 + 0*z1;
-        zp = (-sin(alpha))*x1 + 0*y1 + cos(alpha)*z1;
-        x1 = xp;
-        y1 = yp;
-        z1 = zp;
-
-        xp = cos(alpha)*x2 + 0*y2 + sin(alpha)*z2;
-        yp = 0*x2 + 1*y2 + 0*z2;
-        zp = (-sin(alpha))*x2 + 0*y2 + cos(alpha)*z2;
-        x2 = xp;
-        y2 = yp;
-        z2 = zp;
-
-        x3 = cos(alpha)*x3 + 0*y3 + sin(alpha)*z3;
-        y3 = 0*x3 + 1*y3 + 0*z3;
-        z3 = (-sin(alpha))*x3 + 0*y3 + cos(alpha)*z3;
-        x3 = xp;
-        y3 = yp;
-        z4 = zp;
-
-        x4 = cos(alpha)*x4 + 0*y4 + sin(alpha)*z4; 
-        y4 = 0*x4 + 1*y4 + 0*z4;
-        z4 = (-sin(alpha))*x4 + 0*y4 + cos(alpha)*z4;
-        x4 = xp;
-        y4 = yp;
-        z4 = zp;
-
-        v1x = x1 + (x2 - x1);
-        v2x = x1 + (x3 - x1);
-        v1y = y1 + (y2 - y1);
-        v2y = y1 + (y3 - y1);
-        v1z = z1 + (z2 - z1);
-        v2z = z1 + (z3 - z1);
-
-        nx = v1y*v2z - v2y*v1z;
-        ny = v1z*v2x - v2z*v1x;
-        nz = v1x*v2y - v2x*v1y;**/
-
         paintTriangle(r, alpha);
         paintRectangle(r, h, alpha);
         glRotatef(alpha * 1.0, 0.0,1.0,0.0);
     }
-    //glRotatef(alpha,0,1,0);
-    //glTranslatef(0,h,0);
-    //for(int i = 0; i < amount; i++){
-    //  paintTriangle(r, alpha);
-    //    glRotatef(alpha, 0, 1, 0);
-    //}
-    //glTranslatef(0,-h,0);
-    //glRotatef(alpha,0,1,0);
-
 }
 
 void OGLWidget::paintCircle(float r, int alpha){ //Wahrscheinlicher fehler alpha in bogen oder gradmaß, das was halt falsch ists
     int amount = 360/alpha;
-    //alpha = alpha/360 * 2 * M_PI;
-    //int x1, x2, z1, z2;
-    //x1 = r;
-    //x2 = cos(alpha)*r;
-    //z1 = 0;
-    //z2 = -sin(alpha)*r;
     for(int i = 0; i < amount; i++){
-        /**glBegin(GL_TRIANGLES);
-            glVertex3f(0,y,0);
-            glVertex3f(x1,y,z1);
-            x2 = cos(alpha)*x1 + sin(alpha)*z1;
-            z2 = -sin(alpha)*x1 + cos(alpha)*z1;
-            x1 = x2;
-            z1 = z2;
-            glVertex3f(x1,y,z1);
-            glNormal3f(0,1,0);
-        glEnd();**/
-        //rotationsmatrix anwenden
-        //x1 = cos(alpha)*x1 + sin(alpha)*z1;
-        //x2 = cos(alpha)*x2 + sin(alpha)*z2;
-        //z1 = (-sin(alpha))*x1 + cos(alpha)*z1;
-        //z2 = (-sin(alpha))*x2 + cos(alpha)*z2;
         paintTriangle(r, alpha);
         glRotatef(alpha, 0.0,1.0,0.0);
     }
-    //glRotatef(alpha, 0,1,0);
 }
 
 void OGLWidget::paintTriangle(float r, int alpha){
@@ -873,7 +788,6 @@ void OGLWidget::paintTable(float w, float h, float a){
          glVertex3f(-0.5*w,0.5,0.5*h);
          glVertex3f(-0.5*w,0.5,0.5*h-0.75*a);
      glEnd();
-     //glTranslatef(0,0,-0.5*h);
 }
 
 void OGLWidget::paintRectangle(float r, float h, int alpha){
@@ -931,30 +845,27 @@ void OGLWidget::paintCube(float s){
 void OGLWidget::paintScore(int i){
     int ziffer1, ziffer2, ziffer3, ziffer4;
     glColor3f(255,255,255);
-    //wir gehen davon aus, dass der maximale score 1000 ist
+    //wir gehen davon aus, dass der maximale score 9999 ist,
+    //das wären im besten fall einige dutzend minuten spielzeit
     int ziffer = i % 10;
     ziffer4 = ziffer;
-    //std::cout<<ziffer;
     paintFigure(ziffer4);
     glTranslatef(-2,0,0);
     i = i - ziffer;
     ziffer = i % 100;
     ziffer = ziffer/10;
     ziffer3 = ziffer;
-    //std::cout<<ziffer;
     paintFigure(ziffer3);
     glTranslatef(-2,0,0);
     i = i - ziffer;
     ziffer = i % 1000;
     ziffer = ziffer/100;
-    //std::cout<<ziffer;
     ziffer2 = ziffer;
     paintFigure(ziffer2);
     glTranslatef(-2,0,0);
     i = i - ziffer;
     ziffer = i % 10000;
     ziffer = ziffer/1000;
-    //std::cout<<ziffer<<std::endl;
     ziffer1 = ziffer;
     paintFigure(ziffer1);
     glTranslatef(6,0,0);

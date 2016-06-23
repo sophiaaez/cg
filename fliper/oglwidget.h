@@ -70,6 +70,7 @@ protected:
     int faa;
     int fad;
     int punkte;
+    int light;
     boolean cy_just_hit;
     boolean schwerkraft;
     double wandx, wandz, wandr;
@@ -77,7 +78,7 @@ protected:
     QPoint lastpos; // Last position of mouse pressed, used for dragging
     boolean slowmo;
     double speed;
-    void drawSphere(double r, int lats, int longs);
+    void paintSphere(double r, int b, int l);
     void paintTable(float w, float h, float a);
     void paintRectangle(float w, float h);
     void paintRectangle(float w, float h, int alpha);
@@ -91,6 +92,7 @@ protected:
     void paintFigure(int i);
     void paintLine(double h, double w);
     void paintWall(double h, double w, float x, float y);
+    void setLight(int newlight);
     boolean aufStrecke(float xt, float zt);
     boolean closeTo(int i, int j);
 };
