@@ -27,7 +27,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     punkte = 0;
     wandx = 3;
     wandz = -4;
-    wandr = 0.0915;//Richtung der Wand für links - und für rechts + werte))
+    wandr = 0.1;//Richtung der Wand für links - und für rechts + werte))
     cy_just_hit = false;
     schwerkraft = true;
 }
@@ -129,9 +129,10 @@ void OGLWidget::paintGL()
     glLoadIdentity();
     if(perspective){
         glOrtho(-10,10,-10,10,-100,100);
-
     }else{
-        glFrustum(-10,10,0,5,5,100);
+        glOrtho(-15,15,-15,15,-100,100);
+        glRotatef(60,1,0,0);
+        //glFrustum(-10,10,0,5,5,100);
     }
 
     // Apply rotation angles
@@ -175,21 +176,24 @@ void OGLWidget::paintGL()
     glColor3f(255,0,150);
     paintCircle(1,1);
     glTranslatef(3.5,0,5.5);
-    if(wandr > 0 && wandx+wandr < 4){
-        wandx += wandr;
-    }else if(wandr > 0 &&  wandx+wandr >= 4){
-        wandr = -wandr;
-    }else if(wandr < 0 &&  wandx+wandr >-4){
-        wandx += wandr;
-    }else if(wandr < 0 &&  wandx+wandr <= -4){
-        wandr = -wandr;
+    if(done){
+        if(wandr > 0 && wandx+wandr < 4){
+            wandx += wandr;
+        }else if(wandr > 0 &&  wandx+wandr >= 4){
+            wandr = -wandr;
+        }else if(wandr < 0 &&  wandx+wandr >-4){
+            wandx += wandr;
+        }else if(wandr < 0 &&  wandx+wandr <= -4){
+            wandr = -wandr;
+        }
     }
+
     paintWall(0.2,2,wandx, wandz);
-    glColor3f(0.75,0,0.1);
+    glColor3f(0,0.75,0.75);
     glTranslatef(cy_x, 0, cy_z);
     paintCylinder(0.6, 1);
     glTranslatef(-cy_x, 0, -cy_z);
-    glColor3f(0.5,0,0.5);
+    glColor3f(0.1,0.3,0.5);
     glTranslatef(cu_x, 0, cu_z);
     paintCube(1);
     glTranslatef(-cu_x, 0, -cu_z);
@@ -198,7 +202,7 @@ void OGLWidget::paintGL()
 
     glTranslatef(ox, 0, oz);
     glScalef(0.5,0.5,0.5);
-    glColor3f(0.75,0,0.1);
+    glColor3f(0.5,0,0.5);
     drawSphere(a,35,35);
     glScalef(2,2,2);
     glTranslatef(-ox,0,-oz);
@@ -236,48 +240,63 @@ void OGLWidget::paintGL()
         }
 
         //Zusammenstoß mit Cube
-        if(done && cu_x <= ox+vx*0.1 && ox+vx*0.1 <= cu_x +1 && cu_z-1 <= oz+vz*0.1 && oz+vz*0.1 <= cu_z){
-            std::cout<<"IRGENDWAS"<<std::endl;
-            schwerkraft = true;
-            double vxneu, vzneu, alpha = 0;
-            //rechts oder links
-                if(ox < cu_x){ //links
-                    alpha = acos((-vx)/sqrt(vx*vx+vz*vz)*1);
-                    if(alpha >= 3.14){
-                        alpha = alpha - M_PI;
-                    }
-                    vxneu = cos(alpha)*(-1)-sin(alpha)*0;
-                    vzneu = sin(alpha)*(-1)+cos(alpha)*0;
-                }else if(cu_x+1 < ox){ //rechts
-                    alpha = acos((vx)/sqrt(vx*vx+vz*vz)*1);
-                    if(alpha >= 3.14){
-                        alpha = alpha - M_PI;
-                    }
-                    vxneu = cos(alpha)*(1)-sin(alpha)*0;
-                    vzneu = sin(alpha)*(1)+cos(alpha)*0;
-                }else if(oz < cu_z-1){//oben
-                    alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*(1));
-                    if(alpha >= 3.14){
-                        alpha = alpha - M_PI;
-                    }
-                    vxneu = cos(alpha)*0 - sin(alpha)*(-1);
-                    vzneu = sin(alpha)*0 + cos(alpha)*(-1);
-                }else if(cu_z < oz){// unten
-                    alpha = acos((vx*0+vz*(1))/sqrt(vx*vx+vz*vz)*1);
-                    if(alpha >= 3.14){
-                        alpha = alpha - M_PI;
-                    }
-                    vxneu = cos(alpha)*0-sin(alpha)*(1);
-                    vzneu = sin(alpha)*0+cos(alpha)*(1);
-                }
+        double abstandcx = ox - cu_x;
+        double abstandcz = oz - cu_z;
+        //std::cout<<abstandcx<<" "<<abstandcz<<std::endl;
+        if(-1 <= abstandcx && abstandcx <= 1 && -1.6 <= abstandcz && abstandcz <= -1.5){//oben
+            std::cout<<"würfel oben"<<std::endl;
+            double alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*(1));
+            if(alpha >= 3.14){
+                alpha = alpha - M_PI;
+            }
+            if(alpha >= 0.5*M_PI){
+                alpha = alpha - 0.5*M_PI;
+            }
+            double vxneu = cos(alpha)*0 - sin(alpha)*(-1);
+            double vzneu = sin(alpha)*0 + cos(alpha)*(-1);
             vx = vxneu;
             vz = vzneu;
-            laenge = sqrt((vx*vx + 0*0 + vz*vz));
-            if(laenge != 0){//normalisieren
-                vx = 1/laenge *vx;
-                vz = 1/laenge *vz;
+        } else if(-1 <= abstandcx && abstandcx <= 1 && -0.5 <= abstandcz && abstandcz <= 0.5){//unten
+            std::cout<<"würfel unten"<<std::endl;
+            double alpha = acos((vx*0+vz*(1))/sqrt(vx*vx+vz*vz)*1);
+            if(alpha >= 3.14){
+                alpha = alpha - M_PI;
             }
+            if(alpha >= 0.5*M_PI){
+                alpha = alpha - 0.5*M_PI;
+            }
+            double vxneu = cos(alpha)*0-sin(alpha)*(1);
+            double vzneu = sin(alpha)*0+cos(alpha)*(1);
+            vx = vxneu;
+            vz = vzneu;
+        }else if(-1.6 <= abstandcx && abstandcx <= -1.5 && -1 <= abstandcz && abstandcz <= 1){//links
+            std::cout<<"würfel links"<<std::endl;
+            double alpha = acos((-vx)/sqrt(vx*vx+vz*vz)*1);
+            if(alpha >= 3.14){
+                alpha = alpha - M_PI;
+            }
+            if(alpha >= 0.5*M_PI){
+                alpha = alpha - 0.5*M_PI;
+            }
+            double vxneu = cos(alpha)*(-1)-sin(alpha)*0;
+            double vzneu = sin(alpha)*(-1)+cos(alpha)*0;
+            vx = vxneu;
+            vz = vzneu;
+        }else if(1.5 <= abstandcx && abstandcx <= 1.6 && -1 <= abstandcz && abstandcz <= 1){//rechts
+            std::cout<<"würfel rechts"<<std::endl;
+            double alpha = acos((vx*1 + vz*0)/sqrt(vx*vx+vz*vz)*1);
+            if(alpha >= 3.14){
+                alpha = alpha - M_PI;
+            }
+            if(alpha >= 0.5*M_PI){
+                alpha = alpha - 0.5*M_PI;
+            }
+            double vxneu = cos(alpha)*(1)-sin(alpha)*0;
+            double vzneu = sin(alpha)*(1)+cos(alpha)*0;
+            vx = vxneu;
+            vz = vzneu;
         }
+
          //Zusammenstoß mit Cylinder
         double abstandx = cy_x - ox+vx*0.1;
         double abstandz = cy_z - oz+vz*0.1;
@@ -287,10 +306,11 @@ void OGLWidget::paintGL()
             cy_just_hit = false;
         }
         if(abstand <= 1.2 && !cy_just_hit){
+            std::cout<<"zylinder"<<std::endl;
             //abprallwinkel immer 90°
             cy_just_hit = true;
             schwerkraft = true;
-            double alpha = 90.0 * M_PI/180;
+            double alpha = -135.0 * M_PI/180;
             double vxneu = cos(alpha)*vx-sin(alpha)*vz;
             double vzneu = sin(alpha)*vx+cos(alpha)*vz;
             int vxxx = (vxneu*1000);
@@ -316,7 +336,7 @@ void OGLWidget::paintGL()
         //std::cout<< "brxt: "<<brxt<<" brzt: "<<brzt<<std::endl;
         if(aufStrecke(brxt, brzt)){
             schwerkraft = false;
-            //std::cout<<vx<<" "<<vz<<std::endl;
+            std::cout<<"bande rechts"<<std::endl;
             vx = -(0.5*10 - 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3)-(0.5*14-0.5))*0.5;
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
@@ -332,6 +352,7 @@ void OGLWidget::paintGL()
         double blzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
         //std::cout<<"blxt: " <<blxt<<" blzt: "<<blzt<<std::endl;
         if(aufStrecke(blxt, blzt)){
+            std::cout<<"bande links"<<std::endl;
             schwerkraft = false;
             vx = -(-0.5*10 + 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3) - (0.5*14-0.5))*0.5;
@@ -365,6 +386,7 @@ void OGLWidget::paintGL()
         //double paxt = ((ox+vx*0.1) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14))/((cos(faa)*0.5*3+ sin(faa)*(0.5*14-0.5)) - (- cos(faa)*0.5*3 + sin(faa)*0.5*14));//pinball arm x t-wert
         //double pazt = ((oz+vz*0.1)+1 - (sin(faa)*0.5*3 + cos(faa)*0.5*14))/((-sin(faa)*0.5*3+cos(faa)*(0.5*14-0.5)) - (sin(faa)*0.5*3 + cos(faa)*0.5*14));//pinball arm z t-wert
         if(d <= 0.2 && paxt <= 1 && paxt >= 0 && pazt <= 1 && pazt >= 0 ){
+            std::cout<<"flipperarm"<<std::endl;
             schwerkraft = false;
             if(!up){
                 //runter rollen
@@ -392,28 +414,27 @@ void OGLWidget::paintGL()
         //kollision mit dem kleinen teil der linken bande
         if((ox+vx*0.1)-0.5 <= -0.5*3 && (oz+vz*0.1) > ((0.5*14)-1)){
             schwerkraft = false;
-            //std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
+            std::cout<<"kleiner teil der linken bande"<<std::endl;
             vx = 0;
             vz = 0;
         }
         if(up && (ox)-0.6 <= -0.5*3 && (oz)+0.5 > ((0.5*14)-1)){
-            //std::cout<<"hallo, hier"<<(ox+vx*0.1)+1<<std::endl;
+            std::cout<<"was passiert hier eigentlich?"<<std::endl;
             vx = 0;
             vz = -1;
         }
         //wand
-        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)+0.5 <= wandz-0.1){ //zusammenstoß von oben
+        double abstandzwand = oz - wandz;
+        double abstandxwand = ox - wandx;
+        abstandxwand = sqrt(abstandxwand*abstandxwand);
+        if(abstandzwand <= -0.6 && -0.65 <= abstandzwand && abstandxwand <= 0.5){
             schwerkraft = false;
-            if(done && cu_x -1.5 < ox+vx*0.1 && ox+vx*0.1 < cu_x +1.5 && cu_z -1.5 < oz+vz*0.1 && oz+vz*0.1 < cu_z + 1.5){
-                vz = 0;
-                vx = 0;
-            }else{
-                vz = 0;
-                vx = wandr;
-            }
-
+            std::cout<<"wand von oben"<<std::endl;
+            vz = 0;
+            vx = wandr;
         }
-        if((ox+vx*0.1)+0.5 <= wandx +1 && wandx -1 <= (ox+vx*0.1)-0.5 && (oz+vz*0.1)-0.5 <= wandz+0.1){ //zusammenstoß von unten
+        if(abstandzwand <= 0.6 && 0.65 <= abstandzwand && abstandxwand <= 0.5){ //zusammenstoß von unten
+            std::cout<<"wand von unten"<<std::endl;
             vz = 1;
         }
 
@@ -756,7 +777,7 @@ void OGLWidget::paintTriangle(float r, int alpha){
 
 void OGLWidget::paintFlipperArm(float w, float l, float h){
     float r = w/2;
-    glColor3f(1,0.5,0);
+    glColor3f(0.7,0,0.5);
     paintCylinder(r,h);
     glBegin(GL_TRIANGLES);
         glNormal3f(0,1,0);
@@ -795,7 +816,7 @@ void OGLWidget::paintTable(float w, float h, float a){
         glVertex3f(0.5*w, 0, 0.5*h);
         glVertex3f(0.5*w, 0, -0.5*h);
     glEnd();
-    glColor3f(1,0,0);
+    glColor3f(0.5,0.2,1);
     glBegin(GL_QUADS); //seite rechts
         glNormal3f(1,0,0);
         glVertex3f(0.5*w, 0, -0.5*h);
@@ -824,25 +845,6 @@ void OGLWidget::paintTable(float w, float h, float a){
         glVertex3f(-0.5*w, 0.5, -0.5*h);
         glVertex3f(0.5*w, 0.5, -0.5*h);
     glEnd();
-    //paintRectangle(w, 0.5);
-    //glRotatef(90, 0,1,0);
-    //glTranslatef(0.5*h,0,0.5*w);
-    //paintRectangle(h,0.5);
-    //glRotatef(90, 0,1,0);
-    //glTranslatef(0.5*w,0,0.5*h);
-    //paintRectangle(w, 0.5);
-    //glRotatef(90, 0,1,0);
-    //glTranslatef(0.5*h,0,0.5*w);
-    //paintRectangle(h,0.5);
-    //glTranslatef(-1.5*h,0,-1.5*w);
-    //glTranslatef(h,0,w);
-    //glRotatef(90,0,1,0);
-    //glRotatef(90, 1,0,0);
-    //glColor3f(0,0.5,1);
-    //paintRectangle(w,h);
-    //glRotatef(270,1,0,0);
-    //glColor3f(0,0.1,1);
-    //glTranslatef(0,0,0.5*h);
     glBegin(GL_QUADS);
         glNormal3f(0.5-0.75*a,0,-0.5*w+0.5*a);
         glVertex3f(0.5*a,0,0.5*h-0.5);
