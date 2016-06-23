@@ -1,4 +1,5 @@
 #include "oglwidget.h"
+#include <QOpenGLTexture>
 #include "iostream"
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
@@ -137,6 +138,10 @@ void OGLWidget::initializeGL()
     // Use the color of an object for light calculation
     glColorMaterial( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
     glEnable(GL_COLOR_MATERIAL);
+    // Enable textures
+    glEnable(GL_TEXTURE_2D);
+
+
 }
 
 void OGLWidget::paintGL()
@@ -723,14 +728,54 @@ void OGLWidget::paintFlipperArm(float w, float l, float h){
 }
 
 void OGLWidget::paintTable(float w, float h, float a){
-    glColor3f(0,0.1,1);
-    glBegin(GL_QUADS); //Tischplatte
+    glColor3f(1,1,1);
+
+    // Prepare texture by using the classical approach (i.e. no shaders)
+    QOpenGLTexture texture( QImage(":/kitten.png").mirrored() );
+    // :/images/duck.png refers to a resource, i.e. a file that is linked into the application
+    // Resource files are added with the .qrc file
+    // We use the mirrored image, because QImage and OpenGL are using different y directions.
+    // We also could have created the texture object in the initialization method.
+
+    // These two settings are used to scale the texture image
+    texture.setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    texture.setMagnificationFilter(QOpenGLTexture::Linear);
+
+    // The unfolding slider is used to change the texture coordinates between -5 and 5.
+    // A coordinate of 1 would result in the texture image being shown completely.
+    // Values > 1 will shown the image multiple times. Negative values will flip the image.
+
+    float maxtexcoord = 1;
+
+    // Bind the texture to the rendering unit
+    texture.bind();
+
+    // Draw a square textured with a rubber duck
+    glBegin(GL_QUADS);
+     glNormal3f(0,1,0);
+        // Set texture coordinate and vertex
+        glTexCoord2f(0,0);
+        glVertex3f(0.5*w, 0, 0.5*h);
+
+        glTexCoord2f(maxtexcoord,0);
+
+        glVertex3f(-0.5*w, 0, 0.5*h);
+
+
+        glTexCoord2f(maxtexcoord,maxtexcoord);
+
+        glVertex3f(-0.5*w, 0, -0.5*h);
+
+        glTexCoord2f(0,maxtexcoord);
+        glVertex3f(0.5*w, 0, -0.5*h);
+    glEnd();
+    /**glBegin(GL_QUADS); //Tischplatte
         glNormal3f(0,1,0);
         glVertex3f(-0.5*w, 0, -0.5*h);
         glVertex3f(-0.5*w, 0, 0.5*h);
         glVertex3f(0.5*w, 0, 0.5*h);
         glVertex3f(0.5*w, 0, -0.5*h);
-    glEnd();
+    glEnd();**/
     glColor3f(0.5,0.2,1);
     glBegin(GL_QUADS); //seite rechts
         glNormal3f(1,0,0);

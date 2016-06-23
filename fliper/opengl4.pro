@@ -22,3 +22,6 @@ HEADERS  += mainwindow.h \
     oglwidget.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES += \
+    texture.qrc
