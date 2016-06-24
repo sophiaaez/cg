@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/sounds">
+        <file>kittenmusic.mp3</file>
+    </qresource>
+    <qresource prefix="/pictures">
+        <file>kitten.png</file>
+    </qresource>
+</RCC>

@@ -1,6 +1,7 @@
 #include "oglwidget.h"
 #include <QOpenGLTexture>
 #include "iostream"
+#include <QMediaPlayer>
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
@@ -111,37 +112,29 @@ void OGLWidget::setLight(int newlight){
 void OGLWidget::initializeGL()
 {
     initializeOpenGLFunctions();
-
-
-    // Use depth testing and the depth buffer
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-
-    // Calculate color for each pixel fragment
     glShadeModel(GL_SMOOTH);
-
-    // Enable lighting in scene
+    //licht aktivieren
     glEnable(GL_LIGHTING);
 
-    // Set position of light source
+    //position der lichtquelle setzen
     float light_pos[] = { 10.f, 5.f, 10.f, 0.f };
     glLightfv(GL_LIGHT1, GL_POSITION, light_pos );
-
-    // Set color for this light source
-    // (We are only specifying a diffuse light source)
     float light_diffuse[] = { .8f, .8f, .8f, 1.f };
     glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_diffuse );
 
-    // Turn on this light
+    //licht anschalten
     glEnable(GL_LIGHT1);
-
-    // Use the color of an object for light calculation
     glColorMaterial( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
     glEnable(GL_COLOR_MATERIAL);
-    // Enable textures
+    //Texturen aktivieren
     glEnable(GL_TEXTURE_2D);
 
-
+    //musik abspielen //um Spiel schneller zu machen, diesen Teil auskommentieren
+    QMediaPlayer * musicplayer = new QMediaPlayer();
+    musicplayer->setMedia(QUrl("qrc:/sounds/kittenmusic.mp3"));
+    musicplayer->play();
 }
 
 void OGLWidget::paintGL()
@@ -156,7 +149,7 @@ void OGLWidget::paintGL()
     }else{
         glOrtho(-10,10,-10,10,-100,100);
     }
-    // Change light position
+
     float light_pos[] = { 10.f * cosf(light*M_PI/180.f),
                            5.f,
                           10.f * sinf(light*M_PI/180.f), 0.f };
@@ -166,6 +159,7 @@ void OGLWidget::paintGL()
     float scale = zoom/100.0;
     glScalef( scale, scale, scale ); // Scale along all axis
 
+    //Fläche um 30° drehen (damit es auch aussieht wie ein Flippertisch)
     glRotatef(30,1,0,0);
     paintTable(10,14, 3);
     glTranslatef(7,0,-14);
@@ -174,18 +168,18 @@ void OGLWidget::paintGL()
     glTranslatef(-7,0,14);
     glTranslatef(1,0,7);
     glRotatef(270,0,1,0);
-    if(up){
+    if(up){ //wenn up true ist (leertaste oder flip gedrückt)
         if(fad > 0){ //arm nach oben
-            if(faa > -50){
-                faa -= 2;
+            if(faa > -50){ //arm dreht sich bis um 50° bzw -50°
+                faa -= 2; //drehwinkel verändern
             }else{
-                fad = -1;
+                fad = -1; //richtung umkehren
             }
         }else{
             if(faa < 0){
-                faa += 2;
+                faa += 2; //drehwinkel verändern immer um 2°
             }else{
-                up = false;
+                up = false; //wenn faa wieder = 0, dann fertig gedreht
             }
         }
     }
@@ -198,7 +192,8 @@ void OGLWidget::paintGL()
     glColor3f(255,0,150);
     paintCircle(1,1);
     glTranslatef(3.5,-0.1,5.5);
-    if(done){
+    if(done){ //wenn das spiel angefangen hat
+        //bewegt sich die wand in x richtung zwischen 0 und 4
         if(wandr > 0 && wandx+wandr < 4){
             wandx += wandr;
         }else if(wandr > 0 &&  wandx+wandr >= 4){
@@ -209,7 +204,7 @@ void OGLWidget::paintGL()
             wandr = -wandr;
         }
     }
-
+    //verschiebung von wuerfel und zylinder
     paintWall(0.2,2,wandx, wandz);
     glColor3f(0,0.75,0.75);
     glTranslatef(cy_x, 0, cy_z);
@@ -221,7 +216,7 @@ void OGLWidget::paintGL()
     glTranslatef(-cu_x, 0, -cu_z);
 
     glPushMatrix();
-
+    //bewegung der kugel
     glTranslatef(ox, 0, oz);
     glScalef(0.5,0.5,0.5);
     glColor3f(0.5,0,0.5);
@@ -230,21 +225,21 @@ void OGLWidget::paintGL()
     glTranslatef(-ox,0,-oz);
     glPopMatrix();
 
-    if(done){
+    if(done){//hier berechnung der neuen richtung/bewegungsverktoren der kugel
         double laenge = sqrt((vx*vx + 0*0 + vz*vz));
         if(laenge != 0){//normalisieren
             vx = 1/laenge *vx;
             vz = 1/laenge *vz;
         }
 
-        if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){ //rechts oder links bande
+        if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){ //rechte oder linke wand des tisches
 
         }else{
-            vx = -vx;
+            vx = -vx; //vereinfachte rechnung zum einfallswinkel = ausfallswinkel abprallen
             schwerkraft = true;
             //ax = -ax;
         }
-        if(oz+vz*0.1 <6.5){
+        if(oz+vz*0.1 <6.5){ //untere wand des tisches
 
         }else{ //unten
             vz = 0;
@@ -253,27 +248,30 @@ void OGLWidget::paintGL()
         }
         if(-6.5 < oz+vz*0.1){
 
-        }else{//oben
+        }else{//obere wand des tisches
             vz = -vz;
             schwerkraft = true;
         }
 
-        //Zusammenstoß mit Cube
+        //Zusammenstoß mit wuerfel
         double abstandcx = ox - cu_x;
         double abstandcz = oz - cu_z;
+        //wenn der x-abstand zwischen -1 und 1 ist und der z abstand zwischen -1.6 und -1.5 ist
         if(-1 <= abstandcx && abstandcx <= 1 && -1.6 <= abstandcz && abstandcz <= -1.5){//oben
             std::cout<<"würfel oben"<<std::endl;
-            double alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*(1));
-            if(alpha >= 3.14){
+            double alpha = acos((vx*0+vz*(-1))/sqrt(vx*vx+vz*vz)*(1)); //winkel zwischen einfallsvektor und normalenvektor
+            if(alpha >= 3.14){ //winkel korrigieren
                 alpha = alpha - M_PI;
             }
-            if(alpha >= 0.5*M_PI){
+            if(alpha >= 0.5*M_PI){ //winkel korrigieren
                 alpha = alpha - 0.5*M_PI;
             }
+            //ausfallsvektor ist der normalenvektor um den korrigierten winkel gedreht
             double vxneu = cos(alpha)*0 - sin(alpha)*(-1);
             double vzneu = sin(alpha)*0 + cos(alpha)*(-1);
             vx = vxneu;
             vz = vzneu;
+
         } else if(-1 <= abstandcx && abstandcx <= 1 && -0.5 <= abstandcz && abstandcz <= 0.5){//unten
             std::cout<<"würfel unten"<<std::endl;
             double alpha = acos((vx*0+vz*(1))/sqrt(vx*vx+vz*vz)*1);
@@ -314,7 +312,7 @@ void OGLWidget::paintGL()
             vx = vxneu;
             vz = vzneu;
         }
-        //Zusammenstoß mit Cube-ECKE
+        //Zusammenstoß mit wuerfel-ECKE
         //ecke rechts oben
         double axor = ox-(cu_x+1); //abstandxeckeobenrechts
         double azor = oz-(cu_z-1); //abstandzeckeobenrechts
@@ -355,20 +353,22 @@ void OGLWidget::paintGL()
             vx = -vx;
             vz = -vz;
         }
+
          //Zusammenstoß mit Cylinder
         double abstandx = cy_x - ox+vx*0.1;
         double abstandz = cy_z - oz+vz*0.1;
         double abstand = sqrt(abstandx*abstandx + abstandz*abstandz);
-        if(abstand > 1.2){
+        if(abstand > 1.2){ //erneute kollision erst wieder möglich, wenn abstand groß genug ist
             cy_just_hit = false;
         }
-        if(abstand <= 1.2 && !cy_just_hit){
+        if(abstand <= 1.2 && !cy_just_hit){ //wenn nicht gerade getroffen wurde und der abstand klein genug ist
             std::cout<<"zylinder"<<std::endl;
             cy_just_hit = true;
             schwerkraft = true;
-            double alpha = -135.0 * M_PI/180;
+            double alpha = -135.0 * M_PI/180; //abprallwinkel immer 45° //umrechnung in radian notwendig!!
             double vxneu = cos(alpha)*vx-sin(alpha)*vz;
             double vzneu = sin(alpha)*vx+cos(alpha)*vz;
+            //zu viele nachkommastellen vermeiden
             int vxxx = (vxneu*1000);
             vxneu = vxxx/1000.0;
             int vzzz = (vzneu*1000);
@@ -381,20 +381,25 @@ void OGLWidget::paintGL()
         //Punkte durch pinken Kreis
        abstandx = (-3.5) - ox+vx*0.1;
        abstandz = (-5.5) - oz+vz*0.1;
-       if(abstandx >= -1 && abstandx <= 1 && abstandz >= -1 && abstandz <= 1){
+       abstand = sqrt(abstandx*abstandx + abstandz*abstandz);
+       //der radius des pinken kreises ist 1, also wenn der abstand kleiner ist...
+       if(abstand <= 1){
             punkte += 1;
        }
 
         //bande rechts
         double brxt = ((ox+vx*0.1)+0.5 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
         double brzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
-        if(aufStrecke(brxt, brzt)){
+        if(aufStrecke(brxt, brzt)){ //prüft ob der nächste ortsvektor (mit berechnung durch richtungsvekoren) etwa auf der Strecke liegt
             schwerkraft = false;
             std::cout<<"bande rechts"<<std::endl;
             ox = ox+vx*0.1;
             oz = oz+vz*0.1;
+            //richtungsvektoren werden an bande angepasst, da ein abprallen nicht wirklich statt findet
+            //da die schwerkraft sie mehr nach unten zieht, als sie abprallen würden
             vx = -(0.5*10 - 0.5*3)*0.5;
             vz = -((0.5*14-0.75*3)-(0.5*14-0.5))*0.5;
+            //normalisieren der vektoren
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
             if(laenge != 0){//normalisieren
                 vx = 1/laenge *vx;
@@ -421,26 +426,31 @@ void OGLWidget::paintGL()
         }
 
         //flipper arm
-        //normale zum flipperarm
-        double nx = (-6)*cos(90+faa)-0.5*sin(90+faa);
-        double nz = (-6)*sin(90+faa)+0.5*cos(90+faa);
+        //berechnung der aktuellen normalen zum flipperarm
+        double nx = (-6)*cos((90+faa)*M_PI/180)-0.5*sin((90+faa)*M_PI/180);
+        double nz = (-6)*sin((90+faa)*M_PI/180)+0.5*cos((90+faa)*M_PI/180);
+
         laenge = sqrt((nx*nx + 0*0 + nz*nz));
         if(laenge != 0){ //normalisieren
             nx = 1/laenge *nx;
             nz = 1/laenge *nz;
         }
+        //abstand von flipperarm zur kugel
         double d = (nx*(ox+vx*0.1)+nz*(oz+vz*0.1)+7)/laenge;
-        double paxt = ((ox+vx*0.1) - 3)/((-6)*cos(faa)-0.5*sin(faa));
-        double pazt = ((oz+vz*0.1)+0.5 - 6.5)/((-6)*sin(faa)+0.5*cos(faa));
+        //paxt und pazt um zu prüfen, ob die kugel sich auch wirklich auf dem arm und nicht davor oder dahinterbefindet
+        double paxt = ((ox+vx*0.1) - 3)/((-6)*cos(faa*M_PI/180)-0.5*sin(faa*M_PI/180));
+        double pazt = ((oz+vz*0.1)+0.5 - 6.5)/((-6)*sin(faa*M_PI/180)+0.5*cos(faa*M_PI/180));
+        //dazu müssen paxt und pazt jeweils zwischen 0 und 1 sein
+        //der abstand muss weniger gleich 0.2 sein (nicht weniger gleich 0, weil es dann schon zu spät ist)
         if(d <= 0.2 && paxt <= 1 && paxt >= 0 && pazt <= 1 && pazt >= 0 ){
             std::cout<<"flipperarm"<<std::endl;
             schwerkraft = false;
-            if(!up){
-                //runter rollen
-                vx = (-6)*cos(faa)-0.5*sin(faa);
-                vz = (-6)*sin(faa)+0.5*cos(faa);
+            if(!up){//wenn der flipperarm unten ist
+                //kugel runter rollen
+                vx = (-6)*cos(faa*M_PI/180)-0.5*sin(faa*M_PI/180);
+                vz = (-6)*sin(faa*M_PI/180)+0.5*cos(faa*M_PI/180);
             }else{
-                //abprallen
+                //abprallen in richtung des aktuellen normalenvektors
                 vx = nx;
                 vz = nz;
                 schwerkraft = true;
@@ -464,19 +474,21 @@ void OGLWidget::paintGL()
             vx = 0;
             vz = -1;
         }
+
         //wand
         double abstandzwand = oz - wandz;
         double abstandxwand = ox - wandx;
-        abstandxwand = sqrt(abstandxwand*abstandxwand);
+        abstandxwand = sqrt(abstandxwand*abstandxwand); //bei dem x-abstand ist die richtung (- oder + unwichtig)
+        //wenn der x-abstand zur wand kleiner gleich 0.5 und der z-abstand zwischen -0.6 und -0.65 ist
         if(abstandzwand <= -0.6 && -0.65 <= abstandzwand && abstandxwand <= 0.5){
             schwerkraft = false;
             std::cout<<"wand von oben"<<std::endl;
-            vz = 0;
+            vz = 0; //ball bleibt auf wand liegen
             vx = wandr;
         }
         if(abstandzwand <= 0.6 && 0.65 <= abstandzwand && abstandxwand <= 0.5){ //zusammenstoß von unten
             std::cout<<"wand von unten"<<std::endl;
-            vz = 1;
+            vz = 1; //ball prallt nach unten ab, dabei bleibt die x-richtung bestehend, deshalb einfallswinkel = aufallswinkel
         }
 
 
@@ -485,8 +497,10 @@ void OGLWidget::paintGL()
                    vx = 1/laenge *vx;
                    vz = 1/laenge *vz;
         }
+        //anwenden des richtungsvektors
         ox = ox + vx * 0.1;
         oz = oz + vz * 0.1;
+        //falls gerade schwerkraft benötigt wird (bei dem fall, auf der wand oder auf dem Flipperarm zum beispiel nicht, sonst immer
         if(schwerkraft){
             vz = vz +0.05;
         }
@@ -495,27 +509,29 @@ void OGLWidget::paintGL()
     update();
 }
 
+//diese funktion kontrolliert, anhand der berechneten t-werte (oder lambda) durch das umstellen einer funktion,
+//ob der punkt auf der strecke liegt
 boolean OGLWidget::aufStrecke(float xt, float zt){
     boolean aufstrecke = false;
     //da die werte nur auf eine nachkommastellen übereinstimmen müssen, da wir sonst nie auf ein ergebnis kommen
     xt = (float)((int)(xt*100))/100;
     zt = (float)((int)(zt*100))/100;
-    if(xt <= 1 && xt >= 0){
+    if(xt <= 1 && xt >= 0){ //die t-werte müssen zwischen 1 und 0 sein
         aufstrecke = true;
     }else{
         return false;
     }
-    if(xt == zt){
+    if(xt == zt){ //wenn die werte gleich sind
         return true && aufstrecke;
     }
     int xrest1 = (xt*10);
     int zrest1 = (zt*10);
     int xrest = (xt - (float)((int)(xt*10))/10)*100;
     int zrest = (zt - (float)((int)(zt*10))/10)*100;
-    if(xrest1 == zrest1){
-        return closeTo(xrest, zrest) && aufstrecke;
+    if(xrest1 == zrest1){ //wenn zweite stelle gleich ist
+        return closeTo(xrest, zrest) && aufstrecke; //überprüfen auf mögliche rundung
     }
-    if(closeTo(xrest1,zrest1)){
+    if(closeTo(xrest1,zrest1)){ //sekundäreüberprüfung aufmögliche rundung
         if(xrest == 0 && (zrest == 9 || zrest == 8)){
             return true && aufstrecke;
         }else if( zrest == 0 && (xrest == 9 || xrest == 8)){
@@ -531,6 +547,8 @@ boolean OGLWidget::aufStrecke(float xt, float zt){
     return false;
 }
 
+//überprüft ob die ziffern i und j möglich zu runden sind
+//hier gelten nur ungefähre maßstäbe wie 1 ist in der nähe von 3
 boolean OGLWidget::closeTo(int i, int j){ // i und j sind ziffern
     switch(i){
     case 0: if(j == 1){
@@ -664,7 +682,7 @@ void OGLWidget::paintSphere(double r, int b, int l) {
        }
 }
 
-void OGLWidget::paintCylinder(float r, float h){
+void OGLWidget::paintCylinder(float r, float h){ //r = radius, h = hoehe
     int alpha = 1;
     int amount = 360/alpha;
     paintCircle(r, alpha);
@@ -678,7 +696,7 @@ void OGLWidget::paintCylinder(float r, float h){
     }
 }
 
-void OGLWidget::paintCircle(float r, int alpha){ //Wahrscheinlicher fehler alpha in bogen oder gradmaß, das was halt falsch ists
+void OGLWidget::paintCircle(float r, int alpha){
     int amount = 360/alpha;
     for(int i = 0; i < amount; i++){
         paintTriangle(r, alpha);
@@ -727,33 +745,18 @@ void OGLWidget::paintFlipperArm(float w, float l, float h){
       glEnd();
 }
 
-void OGLWidget::paintTable(float w, float h, float a){
+void OGLWidget::paintTable(float w, float h, float a){//w = weite, h = hoehe, a = weite des flipperArms
     glColor3f(1,1,1);
-
-    // Prepare texture by using the classical approach (i.e. no shaders)
-    QOpenGLTexture texture( QImage(":/kitten.png").mirrored() );
-    // :/images/duck.png refers to a resource, i.e. a file that is linked into the application
-    // Resource files are added with the .qrc file
-    // We use the mirrored image, because QImage and OpenGL are using different y directions.
-    // We also could have created the texture object in the initialization method.
-
-    // These two settings are used to scale the texture image
+    //textur der katze auf die Tischplatte legen
+    //um spiel schneller laufen zu lassen, diesen Teil auskommentieren
+    QOpenGLTexture texture( QImage(":/pictures/kitten.png").mirrored() );
     texture.setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture.setMagnificationFilter(QOpenGLTexture::Linear);
-
-    // The unfolding slider is used to change the texture coordinates between -5 and 5.
-    // A coordinate of 1 would result in the texture image being shown completely.
-    // Values > 1 will shown the image multiple times. Negative values will flip the image.
-
     float maxtexcoord = 1;
-
-    // Bind the texture to the rendering unit
     texture.bind();
 
-    // Draw a square textured with a rubber duck
     glBegin(GL_QUADS);
      glNormal3f(0,1,0);
-        // Set texture coordinate and vertex
         glTexCoord2f(0,0);
         glVertex3f(0.5*w, 0, 0.5*h);
 
@@ -888,32 +891,37 @@ void OGLWidget::paintCube(float s){
 }
 
 void OGLWidget::paintScore(int i){
-    int ziffer1, ziffer2, ziffer3, ziffer4;
-    glColor3f(255,255,255);
     //wir gehen davon aus, dass der maximale score 9999 ist,
     //das wären im besten fall einige dutzend minuten spielzeit
-    int ziffer = i % 10;
-    ziffer4 = ziffer;
-    paintFigure(ziffer4);
-    glTranslatef(-2,0,0);
-    i = i - ziffer;
-    ziffer = i % 100;
-    ziffer = ziffer/10;
-    ziffer3 = ziffer;
-    paintFigure(ziffer3);
-    glTranslatef(-2,0,0);
-    i = i - ziffer;
-    ziffer = i % 1000;
-    ziffer = ziffer/100;
-    ziffer2 = ziffer;
-    paintFigure(ziffer2);
-    glTranslatef(-2,0,0);
-    i = i - ziffer;
-    ziffer = i % 10000;
-    ziffer = ziffer/1000;
-    ziffer1 = ziffer;
-    paintFigure(ziffer1);
-    glTranslatef(6,0,0);
+    if(i < 9999){
+        int ziffer1, ziffer2, ziffer3, ziffer4;
+        glColor3f(255,255,255);
+        int ziffer = i % 10;
+        ziffer4 = ziffer;
+        paintFigure(ziffer4);
+        glTranslatef(-2,0,0);
+        i = i - ziffer;
+        ziffer = i % 100;
+        ziffer = ziffer/10;
+        ziffer3 = ziffer;
+        paintFigure(ziffer3);
+        glTranslatef(-2,0,0);
+        i = i - ziffer;
+        ziffer = i % 1000;
+        ziffer = ziffer/100;
+        ziffer2 = ziffer;
+        paintFigure(ziffer2);
+        glTranslatef(-2,0,0);
+        i = i - ziffer;
+        ziffer = i % 10000;
+        ziffer = ziffer/1000;
+        ziffer1 = ziffer;
+        paintFigure(ziffer1);
+        glTranslatef(6,0,0);
+    }else{
+        paintScore(9999);
+    }
+
 }
 
 void OGLWidget::paintLine(double h, double w){
@@ -926,6 +934,7 @@ void OGLWidget::paintLine(double h, double w){
     glEnd();
 }
 
+//malt eine Zahl auf den Bildschirm
 void OGLWidget::paintFigure(int i){
     switch(i){
     case 0:
@@ -1004,6 +1013,7 @@ void OGLWidget::paintFigure(int i){
     }
 }
 void OGLWidget::paintWall(double h, double w, float x, float z){
+    //h = hoehe, w = weite, x = x-koordinate, z = z-koordinate
     glTranslatef(x,0,z);
     glColor3f(222,42,255);
     glBegin(GL_QUADS); //unten

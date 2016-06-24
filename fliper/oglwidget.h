@@ -8,6 +8,7 @@
 #include<vector>
 #include<QTimer>
 #include<QObject>
+#include<QMediaPlayer>
 
 class OGLWidget : public QOpenGLWidget,
                   protected QOpenGLFunctions
