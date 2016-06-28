@@ -38,6 +38,7 @@ public slots:
     // Set the rotation angles
     void setCubeX( int newrx );
     void setCubeZ( int newry );
+    void setCubeA( int newa);
     void setCylinderX( int newrz );
     void setCylinderZ( int newrz );
     void setStart(bool bla);
@@ -72,7 +73,9 @@ protected:
     int fad;
     int punkte;
     int light;
+    int cu_a;
     boolean cy_just_hit;
+    boolean cu_just_hit;
     boolean schwerkraft;
     double wandx, wandz, wandr;
     boolean drawable;

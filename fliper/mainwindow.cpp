@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->start_button, SIGNAL(clicked(bool)), ui->glwidget, SLOT(setStart(bool)));
     connect(ui->flip, SIGNAL(clicked(bool)), ui->glwidget, SLOT(setFlip(bool)));
     connect(ui->perspective, SIGNAL(clicked(bool)), ui->glwidget, SLOT(setPerspective(bool)));
+    connect(ui->cube_a, SIGNAL(valueChanged(int)), ui->glwidget, SLOT(setCubeA(int)));
 
     // Handle any rotation change requests from mouse dragging and key presses
     //connect( ui->glwidget, SIGNAL(changeRotation(int,int,int)), this, SLOT(onChangeRotation(int,int,int)));

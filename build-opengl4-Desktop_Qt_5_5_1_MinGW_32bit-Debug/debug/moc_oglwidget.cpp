@@ -104,7 +104,7 @@ void OGLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         OGLWidget *_t = static_cast<OGLWidget *>(_o);
         Q_UNUSED(_t)
         switch (_id) {
-        case 0: _t->changeRotation((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3]))); break;
+        //case 0: _t->changeRotation((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3]))); break;
         case 1: _t->stepAnimation(); break;
         case 2: _t->setCubeX((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 3: _t->setCubeZ((*reinterpret_cast< int(*)>(_a[1]))); break;
