@@ -228,12 +228,12 @@ void OGLWidget::paintGL()
 
     glPushMatrix();
     //bewegung der kugel
-    glTranslatef(ox, 0, oz);
+    glTranslatef(ox, 0.5, oz);
     glScalef(0.5,0.5,0.5);
     glColor3f(0.5,0,0.5);
     paintSphere(a,35,35);
     glScalef(2,2,2);
-    glTranslatef(-ox,0,-oz);
+    glTranslatef(-ox,-0.5,-oz);
     glPopMatrix();
 
     if(done){//hier berechnung der neuen richtung/bewegungsverktoren der kugel
@@ -248,7 +248,11 @@ void OGLWidget::paintGL()
         }else{//rechte oder linke wand des tisches
             vx = -vx; //vereinfachte rechnung zum einfallswinkel = ausfallswinkel abprallen
             schwerkraft = true;
-            //ax = -ax;
+            if(ox <= -4.5){
+                ox = -4.4;
+            }else if(ox >= 4.5){
+                ox = 4.4;
+            }
         }
         if(oz+vz*0.1 <6.5){
 
@@ -550,17 +554,24 @@ void OGLWidget::paintGL()
             //Berechnung des Auftreffpunkts auf dem Cylinder
             double apcx = ox + vx*0.5;
             double apcz = oz + vz*0.5;
+            //Berechnung des Vektors von Ortsvektor der Kugel zur Mitte des Zylinders
+            double vkcx = ox - cy_x;
+            double vkcz = oz - cy_z;
             //Berechnung des Normalenvektors im Auftreffpunkt
             double nax = apcx-cy_x;
             double naz = apcz-cy_z;
-            //Berechnung des Einfallswinkels
-            double alpha = acos((vx*nax+vz*(naz))/(sqrt(vx*vx+vz*vz)*sqrt(nax*nax + naz*naz)));
+            //Berechnung des Einfallswinkels in relation zum Mittelpunkt des Zylinders
+            double alpha = acos((vx*vkcx+vz*(vkcz))/(sqrt(vx*vx+vz*vz)*sqrt(vkcx*vkcx + vkcz*vkcz)));
             if(alpha >= 0.5*M_PI){
                 alpha = (M_PI - alpha);
             }
             //Drehen des Normalenvektors damit er der Aufallswinkel ist
             double vxneu = cos(alpha)*nax-sin(alpha)*naz;
             double vzneu = sin(alpha)*nax+cos(alpha)*naz;
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*nax - sin(2*M_PI-alpha)*naz;
+                vzneu = sin(2*M_PI-alpha)*nax + cos(2*M_PI-alpha)*naz;
+            }
             vx = vxneu;
             vz = vzneu;
         }
@@ -946,13 +957,6 @@ void OGLWidget::paintTable(float w, float h, float a){//w = weite, h = hoehe, a 
         //glTexCoord2f(0,maxtexcoord);
         glVertex3f(0.5*w, 0, -0.5*h);
     glEnd();
-    /**glBegin(GL_QUADS); //Tischplatte
-        glNormal3f(0,1,0);
-        glVertex3f(-0.5*w, 0, -0.5*h);
-        glVertex3f(-0.5*w, 0, 0.5*h);
-        glVertex3f(0.5*w, 0, 0.5*h);
-        glVertex3f(0.5*w, 0, -0.5*h);
-    glEnd();**/
     glColor3f(0.5,0.2,1);
     glBegin(GL_QUADS); //seite rechts
         glNormal3f(1,0,0);
