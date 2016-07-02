@@ -304,7 +304,6 @@ void OGLWidget::paintGL()
         if(dob < 0.5 && dre <= 1 && dli <= 1 && !cu_just_hit){
             schwerkraft = true;
             cu_just_hit = true;
-            std::cout<<"würfel oben"<<std::endl;
             //normaler Normalenvekor
             cnx = 0;
             cnz = -1;
@@ -334,7 +333,6 @@ void OGLWidget::paintGL()
         }
         //links
         if(dli < 0.5 && dob <= 1 && dun <= 1){
-            std::cout<<"würfel links"<<std::endl;
             schwerkraft = true;
             cu_just_hit = true;
             cnx = -1;
@@ -359,7 +357,6 @@ void OGLWidget::paintGL()
         }
         //unten
         if(dun < 0.5 && dli <= 1 && dre <= 1){
-            std::cout<<"würfel unten"<<std::endl;
             schwerkraft = true;
             cu_just_hit = true;
             cnx = 0;
@@ -383,7 +380,6 @@ void OGLWidget::paintGL()
         }
         //rechts
         if(dre < 0.5 && dob <= 1 && dun <= 1){
-            std::cout<<"würfel rechts"<<std::endl;
             schwerkraft = true;
             cu_just_hit = true;
             cnx = 1;
@@ -442,7 +438,6 @@ void OGLWidget::paintGL()
         if(dero <= 0.5 && rdero <= 0.5){
             schwerkraft = true;
             cu_just_hit = true;
-            std::cout<<"würfel oben rechts"<<std::endl;
             cnx = 1;
             cnz = -1;
             cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
@@ -471,7 +466,6 @@ void OGLWidget::paintGL()
         if(delo <= 0.5 && rdelo <= 0.5){
             schwerkraft = true;
             cu_just_hit = true;
-            std::cout<<"würfel oben links"<<std::endl;
             cnx = -1;
             cnz = -1;
             cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
@@ -495,7 +489,6 @@ void OGLWidget::paintGL()
         if(delu <= 0.5 && rdelu <= 0.5){
             schwerkraft = true;
             cu_just_hit = true;
-            std::cout<<"würfel oben links"<<std::endl;
             cnx = -1;
             cnz = -1;
             cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
@@ -519,7 +512,6 @@ void OGLWidget::paintGL()
         if(deru <= 0.5 && rderu <= 0.5){
             schwerkraft = true;
             cu_just_hit = true;
-            std::cout<<"würfel unten links"<<std::endl;
             cnx = -1;
             cnz = -1;
             cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
@@ -548,7 +540,6 @@ void OGLWidget::paintGL()
             cy_just_hit = false;
         }
         if(abstand <= 1.2 && !cy_just_hit){ //wenn nicht gerade getroffen wurde und der abstand klein genug ist
-            std::cout<<"zylinder"<<std::endl;
             cy_just_hit = true;
             schwerkraft = true;
             //Berechnung des Auftreffpunkts auf dem Cylinder
@@ -598,7 +589,6 @@ void OGLWidget::paintGL()
         //und die x-Koordinate der Kugel zwischen Anfang und Ende der Bande liegt
         if(drb <= 0.5 && lrrx <= ox && ox <= rrrx){
             schwerkraft = true;
-            std::cout<<"bande rechts"<<std::endl;
             double nx = (0.5-0.75*3);
             double nz = -0.5*10+0.5*3;
             alpha = acos((vx*nx+vz*(nz))/(sqrt(vx*vx+vz*vz)*sqrt(nx*nx + nz*nz)));
@@ -626,7 +616,6 @@ void OGLWidget::paintGL()
          //und die x-Koordinate der Kugel zwischen Anfang und Ende der Bande liegt
          if(dlb <= 0.5 && llrx <= ox && ox <= rlrx){
             schwerkraft = true;
-            std::cout<<"bande links"<<std::endl;
             double nx = -(0.5-0.75*3);
             double nz = -0.5*10+0.5*3;
             alpha = acos((vx*nx+vz*(nz))/(sqrt(vx*vx+vz*vz)*sqrt(nx*nx + nz*nz)));
@@ -680,7 +669,6 @@ void OGLWidget::paintGL()
         }
         if(df <= 0.5&& !fl_just_hit){
             fl_just_hit = true;
-            std::cout<<"flipperarm"<<std::endl;
             schwerkraft = false;
             if(!up){//wenn der flipperarm unten ist
                 //kugel runter rollen
@@ -698,13 +686,12 @@ void OGLWidget::paintGL()
                 vx = 1/laenge *vx;
                 vz = 1/laenge *vz;
             }
-            std::cout<<vx<<" "<<vz<<std::endl;
+
         }
 
         //kollision mit dem kleinen teil der linken bande
         if((ox+vx*0.1)-0.5 <= -0.5*3 && (oz+vz*0.1) > ((0.5*14)-1)){
             schwerkraft = false;
-            std::cout<<"kleiner teil der linken bande"<<std::endl;
             vx = 0;
             vz = 0;
         }
@@ -739,25 +726,21 @@ void OGLWidget::paintGL()
         //Zusammenstoß von Oben
         if(dao <= 0.5 && dar <= 2 && dal <= 2){
             schwerkraft = true;
-            std::cout<<"wand von oben"<<std::endl;
             vz = -0.5;
         }
         //Unten
         if(dau <= 0.5 && dar <= 2 && dal <= 2){
             schwerkraft = true;
-            std::cout<<"wand von unten"<<std::endl;
             vz = 1; //ball prallt nach unten ab, dabei bleibt die x-richtung bestehend, deshalb einfallswinkel = aufallswinkel
         }
         //Rechts
         if(dar <= 0.5 && dau <= 0.1 && dao <= 0.1){
             schwerkraft = true;
-            std::cout<<"wand von rechts"<<std::endl;
             vx = 1;
         }
         //Links
         if(dal <= 0.5 && dau <= 0.1 && dao <= 0.1){
             schwerkraft = true;
-            std::cout<<"wand von links"<<std::endl;
             vx = -1;
         }
 
