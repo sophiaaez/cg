@@ -76,6 +76,7 @@ protected:
     int cu_a;
     boolean cy_just_hit;
     boolean cu_just_hit;
+    boolean fl_just_hit;
     boolean schwerkraft;
     double wandx, wandz, wandr;
     boolean drawable;
@@ -97,8 +98,7 @@ protected:
     void paintLine(double h, double w);
     void paintWall(double h, double w, float x, float y);
     void setLight(int newlight);
-    boolean aufStrecke(float xt, float zt);
-    boolean closeTo(int i, int j);
+    double pointLineDistance(double x1, double z1, double x2, double z2, double px, double pz);
 };
 
 

@@ -2,6 +2,7 @@
 #include <QOpenGLTexture>
 #include "iostream"
 #include <QMediaPlayer>
+#include <cmath>
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
@@ -32,6 +33,7 @@ OGLWidget::OGLWidget(QWidget *parent)
     wandr = 0.1;//Richtung der Wand für links - und für rechts + werte))
     cy_just_hit = false;
     cu_just_hit = false;
+    fl_just_hit = false;
     schwerkraft = true;
     light = 0;
 }
@@ -140,9 +142,9 @@ void OGLWidget::initializeGL()
     glEnable(GL_TEXTURE_2D);
 
     //musik abspielen //um Spiel schneller zu machen, diesen Teil auskommentieren
-    QMediaPlayer * musicplayer = new QMediaPlayer();
+    /**QMediaPlayer * musicplayer = new QMediaPlayer();
     musicplayer->setMedia(QUrl("qrc:/sounds/kittenmusic.mp3"));
-    musicplayer->play();
+    musicplayer->play();**/
 }
 
 void OGLWidget::paintGL()
@@ -163,7 +165,6 @@ void OGLWidget::paintGL()
                           10.f * sinf(light*M_PI/180.f), 0.f };
     glLightfv(GL_LIGHT1, GL_POSITION,  light_pos);
 
-    // Apply scaling
     float scale = zoom/100.0;
     glScalef( scale, scale, scale ); // Scale along all axis
 
@@ -242,16 +243,16 @@ void OGLWidget::paintGL()
             vz = 1/laenge *vz;
         }
 
-        if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){ //rechte oder linke wand des tisches
+        if(-4.5 < ox+vx*0.1 && ox+vx*0.1 <4.5){
 
-        }else{
+        }else{//rechte oder linke wand des tisches
             vx = -vx; //vereinfachte rechnung zum einfallswinkel = ausfallswinkel abprallen
             schwerkraft = true;
             //ax = -ax;
         }
-        if(oz+vz*0.1 <6.5){ //untere wand des tisches
+        if(oz+vz*0.1 <6.5){
 
-        }else{ //unten
+        }else{ //untere wand des tisches
             vz = 0;
             az = 0;
             schwerkraft = false;
@@ -264,39 +265,59 @@ void OGLWidget::paintGL()
         }
 
         //Zusammenstoß mit wuerfel
-        double abstandcx = ox - cu_x;
-        double abstandcz = oz - cu_z;
-        double abstandcx2 = cos(cu_a* M_PI/180)*abstandcx - sin(cu_a* M_PI/180)*abstandcz;
-        double abstandcz2 = sin(cu_a* M_PI/180)*abstandcx + cos(cu_a* M_PI/180)*abstandcz;
         double cnx, cnz, cnx2, cnz2;
         double alpha;
-
-        abstandcx = abstandcx2;
-        abstandcz = abstandcz2;
-        double abstandtotal = sqrt(abstandcx*abstandcx + abstandcz* abstandcz);
-        if(abstandtotal >= 1 ){
+        //Radius des Umkreises
+        double r = sqrt(0.5*0.5+0.5*0.5);
+        //Ecke Rechts Oben
+        double erox = cu_x+(cos((315-cu_a)*M_PI/180))*r;
+        double eroz = cu_z+(sin((315-cu_a)*M_PI/180))*r;
+        //Ecke Links Oben
+        double elox = cu_x+(cos((225-cu_a)*M_PI/180))*r;
+        double eloz = cu_z+(sin((225-cu_a)*M_PI/180))*r;
+        //Ecke Links Unten
+        double elux = cu_x+(cos((135-cu_a)*M_PI/180))*r;
+        double eluz = cu_z+(sin((135-cu_a)*M_PI/180)*r);
+        //Ecke Rechts Unten
+        double erux = cu_x+(cos((45-cu_a)*M_PI/180))*r;
+        double eruz = cu_z+(sin((45-cu_a)*M_PI/180))*r;
+        //Abstand zur oberen Kante des Würfels
+        double dob = pointLineDistance(erox, eroz, elox, eloz, ox, oz);
+        //Abstand zur linken Kante des Würfels
+        double dli = pointLineDistance(elox, eloz, elux, eluz, ox, oz);
+        //Abstand zur unteren Kante des Würfels
+        double dun = pointLineDistance(elux, eluz, erux, eruz, ox, oz);
+        //Abstand zur linken Kante des Würfels
+        double dre = pointLineDistance(erux, eruz, erox, eroz, ox, oz);
+        //wuerfel kann erst wieder getroffen werden, wenn der abstand zu jeder gerade größerals 0.5 ist
+        if(dob > 0.5 && dli > 0.5 && dun > 0.5 && dre > 0.5){
             cu_just_hit = false;
         }
-
-        //wenn der x-abstand zwischen -1 und 1 ist und der z abstand zwischen -1.6 und -1.5 ist
-        if(-1 <= abstandcx && abstandcx <= 1 && -1.1 <= abstandcz && abstandcz <= -1.0 && !cu_just_hit){//oben
+        //oben
+        //wenn der abstand zu oben kleiner ist als 0.25
+        //und der Ball zwischen links und rechts liegt
+        //-> der abstand zu links und rechts kleiner als 1 ist
+        if(dob < 0.5 && dre <= 1 && dli <= 1 && !cu_just_hit){
             schwerkraft = true;
             cu_just_hit = true;
             std::cout<<"würfel oben"<<std::endl;
+            //normaler Normalenvekor
             cnx = 0;
             cnz = -1;
+            //gedrehter normalenvektor
             cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
             cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
             cnx = cnx2;
             cnz = cnz2;
-            alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz))); //winkel zwischen einfallsvektor und normalenvektor
+            //Berechnung des Winkels zwischen Normalenvektor und Einfallsvektor
+            alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz)));
             //winkel korrektur, da wir den normalenvektor eventuell nach links oder rechts um den winkel rotieren müssen
             if(alpha >= 0.5*M_PI){
                 alpha = (M_PI - alpha);
             }
             //ausfallsvektor ist der normalenvektor um den korrigierten winkel gedreht
-            double vxneu = cos(alpha)*cnx - sin(alpha)*cnz;
-            double vzneu = sin(alpha)*cnx + cos(alpha)*cnz;
+            double vxneu = cos(alpha)*cnx-sin(alpha)*cnz;
+            double vzneu = sin(alpha)*cnx+cos(alpha)*cnz;
             //falls der winkel alpha den normalenvektor in die falsche richtung verschiebt,
             //so, dass der austrittswinkel etwa gleich der eintrittswinkel ist, obwohl der aufprallwinkel
             //nicht 0° war
@@ -304,34 +325,11 @@ void OGLWidget::paintGL()
                 vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
                 vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
             }
-
-
             vx = vxneu;
             vz = vzneu;
-
-        } else if(-1 <= abstandcx && abstandcx <= 1 && 1.0 <= abstandcz && abstandcz <= 1.1 && !cu_just_hit){//unten
-            std::cout<<"würfel unten"<<std::endl;
-            schwerkraft = true;
-            cu_just_hit = true;
-            cnx = 0;
-            cnz = 1;
-            cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
-            cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
-            cnx = cnx2;
-            cnz = cnz2;
-            alpha = acos((vx*cnx+vz*(cnz))/sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz));
-            if(alpha >= 0.5*M_PI){
-                alpha = (M_PI - alpha);
-            }
-            double vxneu = cos(alpha)*cnx - sin(alpha)*cnz;
-            double vzneu = sin(alpha)*cnx + cos(alpha)*cnz;
-            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
-                vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
-                vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
-            }
-            vx = vxneu;
-            vz = vzneu;
-        }else if(-1.1 <= abstandcx && abstandcx <= -1.0 && -1 <= abstandcz && abstandcz <= 1 && !cu_just_hit){//links
+        }
+        //links
+        if(dli < 0.5 && dob <= 1 && dun <= 1){
             std::cout<<"würfel links"<<std::endl;
             schwerkraft = true;
             cu_just_hit = true;
@@ -354,7 +352,33 @@ void OGLWidget::paintGL()
             }
             vx = vxneu;
             vz = vzneu;
-        }else if(1.0 <= abstandcx && abstandcx <= 1.1 && -1 <= abstandcz && abstandcz <= 1 && !cu_just_hit){//rechts
+        }
+        //unten
+        if(dun < 0.5 && dli <= 1 && dre <= 1){
+            std::cout<<"würfel unten"<<std::endl;
+            schwerkraft = true;
+            cu_just_hit = true;
+            cnx = 0;
+            cnz = 1;
+            cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
+            cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
+            cnx = cnx2;
+            cnz = cnz2;
+            alpha = acos((vx*cnx+vz*(cnz))/sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz));
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
+            }
+            double vxneu = cos(alpha)*cnx - sin(alpha)*cnz;
+            double vzneu = sin(alpha)*cnx + cos(alpha)*cnz;
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
+                vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
+            }
+            vx = vxneu;
+            vz = vzneu;
+        }
+        //rechts
+        if(dre < 0.5 && dob <= 1 && dun <= 1){
             std::cout<<"würfel rechts"<<std::endl;
             schwerkraft = true;
             cu_just_hit = true;
@@ -364,80 +388,152 @@ void OGLWidget::paintGL()
             cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
             cnx = cnx2;
             cnz = cnz2;
-            //std::cout<<cnx<<" "<<cnz<<std::endl;
             alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz)));
             if(alpha >= 0.5*M_PI){
                 alpha = (M_PI - alpha);
             }
-            //std::cout<<cu_a<<" "<<alpha*180/M_PI<<std::endl;
             double vxneu = cos(alpha)*cnx-sin(alpha)*cnz;
             double vzneu = sin(alpha)*cnx+cos(alpha)*cnz;
             if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
                 vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
                 vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
             }
-            //std::cout<<vx<<" " <<vz << " "<<cnx<<" "<<cnz<<" "<< alpha*180/M_PI<<" "<<vxneu<<" "<<vzneu<<std::endl;
-
             vx = vxneu;
             vz = vzneu;
         }
-        //Zusammenstoß mit wuerfel-ECKE
-        //ecke rechts oben
-        double axor = ox-(cu_x+0.5)+0.5; //abstandxeckeobenrechts
-        double azor = oz-(cu_z-0.5)-0.5; //abstandzeckeobenrechts
-        abstandcx2 = cos(cu_a* M_PI/180)*axor - sin(cu_a* M_PI/180)*azor;
-        abstandcz2 = sin(cu_a* M_PI/180)*axor + cos(cu_a* M_PI/180)*azor;
-        axor = abstandcx2;
-        azor = abstandcz2;
-        double daor = sqrt(axor*axor+azor*azor); // diagonalerabstandobenrechts
-        if(daor <= 0.5){ //radius der kugel ist 0.5
-            std::cout<<"Würfel ecke"<<std::endl;
+
+
+        //Referenzpunkt Ecke Rechts Oben
+        double rerox = cu_x+(cos((315-cu_a)*M_PI/180)*(r+0.5));
+        double reroz = cu_z+(sin((315-cu_a)*M_PI/180)*(r+0.5));
+        //Referenzpunkt Ecke Links Oben
+        double relox = cu_x+(cos((225-cu_a)*M_PI/180)*(r+0.5));
+        double reloz = cu_z+(sin((225-cu_a)*M_PI/180)*(r+0.5));
+        //Referenzpunkt Ecke Links Unten
+        double relux = cu_x+(cos((135-cu_a)*M_PI/180)*(r+0.5));
+        double reluz = cu_z+(sin((135-cu_a)*M_PI/180)*(r+0.5));
+        //Referenzpunkt Ecke Rechts Unten
+        double rerux = cu_x+(cos((45-cu_a)*M_PI/180)*(r+0.5));
+        double reruz = cu_z+(sin((45-cu_a)*M_PI/180)*(r+0.5));
+
+        //Abstand zur Ecke Oben Rechts
+        double dero = sqrt((erox-ox)*(erox-ox)+(eroz-oz)*(eroz-oz));
+        //Abstand zur Ecke Oben Links
+        double delo = sqrt((elox-ox)*(elox-ox)+(eloz-oz)*(eloz-oz));
+        //Abstand zur Ecke Unten Links
+        double delu = sqrt((elux-ox)*(elux-ox)+(eluz-oz)*(eluz-oz));
+        //Abstand zur Ecke Unten Rechts
+        double deru = sqrt((erux-ox)*(erux-ox)+(eruz-oz)*(eruz-oz));
+
+        //Abstand zum Referenzpunkt Oben Rechts
+        double rdero = sqrt((rerox-ox)*(rerox-ox)+(reroz-oz)*(reroz-oz));
+        //Abstand zum Referenzpunkt Oben Links
+        double rdelo = sqrt((relox-ox)*(relox-ox)+(reloz-oz)*(reloz-oz));
+        //Abstand zum Referenzpunkt Unten Links
+        double rdelu = sqrt((relux-ox)*(relux-ox)+(reluz-oz)*(reluz-oz));
+        //Abstand zum Referenzpunkt Unten Rechts
+        double rderu = sqrt((rerux-ox)*(rerux-ox)+(reruz-oz)*(reruz-oz));
+
+        //Ecke Oben Rechts
+        if(dero <= 0.5 && rdero <= 0.5){
             schwerkraft = true;
-            //kugel verschwindet
-            vx = NAN;
-            vz = NAN;
+            cu_just_hit = true;
+            std::cout<<"würfel oben rechts"<<std::endl;
+            cnx = 1;
+            cnz = -1;
+            cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
+            cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
+            cnx = cnx2;
+            cnz = cnz2;
+            alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz)));
+            //winkel korrektur, da wir den normalenvektor eventuell nach links oder rechts um den winkel rotieren müssen
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
+            }
+            //ausfallsvektor ist der normalenvektor um den korrigierten winkel gedreht
+            double vxneu = cos(alpha)*cnx-sin(alpha)*cnz;
+            double vzneu = sin(alpha)*cnx+cos(alpha)*cnz;
+            //falls der winkel alpha den normalenvektor in die falsche richtung verschiebt,
+            //so, dass der austrittswinkel etwa gleich der eintrittswinkel ist, obwohl der aufprallwinkel
+            //nicht 0° war
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
+                vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
+            }
+            vx = vxneu;
+            vz = vzneu;
         }
-        //ecke links oben
-        double axol = ox-(cu_x-0.5)-0.5; //abstandxeckeobenlinks
-        double azol = oz-(cu_z+0.5)-0.5; //abstandzeckeobenlinks
-        abstandcx2 = cos(cu_a* M_PI/180)*axor - sin(cu_a* M_PI/180)*azor;
-        abstandcz2 = sin(cu_a* M_PI/180)*axor + cos(cu_a* M_PI/180)*azor;
-        axor = abstandcx2;
-        azor = abstandcz2;
-        double daol = sqrt(axol*axol+azol*azol); // diagonalerabstandobenlinks
-        if(daol <= 0.5){ //radius der kugel ist 0.5
-            std::cout<<"Würfel ecke"<<std::endl;
+        //Ecke Oben Links
+        if(delo <= 0.5 && rdelo <= 0.5){
             schwerkraft = true;
-            vx = NAN;
-            vz = NAN;
+            cu_just_hit = true;
+            std::cout<<"würfel oben links"<<std::endl;
+            cnx = -1;
+            cnz = -1;
+            cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
+            cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
+            cnx = cnx2;
+            cnz = cnz2;
+            alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz)));
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
+            }
+            double vxneu = cos(alpha)*cnx-sin(alpha)*cnz;
+            double vzneu = sin(alpha)*cnx+cos(alpha)*cnz;
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
+                vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
+            }
+            vx = vxneu;
+            vz = vzneu;
         }
-        //ecke links unten
-        double axul = ox-(cu_x-0.5)-0.5; //abstandxeckeuntenlinks
-        double azul = oz-(cu_z-0.5)+0.5; //abstandzeckeuntenlinks
-        abstandcx2 = cos(cu_a* M_PI/180)*axor - sin(cu_a* M_PI/180)*azor;
-        abstandcz2 = sin(cu_a* M_PI/180)*axor + cos(cu_a* M_PI/180)*azor;
-        axor = abstandcx2;
-        azor = abstandcz2;
-        double daul = sqrt(axul*axul+azul*azul); // diagonalerabstanduntenlinks
-        if(daul <= 0.5){ //radius der kugel ist 0.5
-            std::cout<<"Würfel ecke"<<std::endl;
+        //Ecke Unten Links
+        if(delu <= 0.5 && rdelu <= 0.5){
             schwerkraft = true;
-            vx = NAN;
-            vz = NAN;
+            cu_just_hit = true;
+            std::cout<<"würfel oben links"<<std::endl;
+            cnx = -1;
+            cnz = -1;
+            cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
+            cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
+            cnx = cnx2;
+            cnz = cnz2;
+            alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz)));
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
+            }
+            double vxneu = cos(alpha)*cnx-sin(alpha)*cnz;
+            double vzneu = sin(alpha)*cnx+cos(alpha)*cnz;
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
+                vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
+            }
+            vx = vxneu;
+            vz = vzneu;
         }
-        //ecke rechts unten
-        double axur = ox-(cu_x+0.5)+0.5; //abstandxeckeobenrechts
-        double azur = oz-(cu_z+0.5)+0.5; //abstandzeckeobenrechts
-        abstandcx2 = cos(cu_a* M_PI/180)*axor - sin(cu_a* M_PI/180)*azor;
-        abstandcz2 = sin(cu_a* M_PI/180)*axor + cos(cu_a* M_PI/180)*azor;
-        axor = abstandcx2;
-        azor = abstandcz2;
-        double daur = sqrt(axur*axur+azur*azur); // diagonalerabstandobenrechts
-        if(daur <= 0.5){ //radius der kugel ist 0.5
-            std::cout<<"Würfel ecke"<<std::endl;
+        //Ecke Unten Links
+        if(deru <= 0.5 && rderu <= 0.5){
             schwerkraft = true;
-            vx = NAN;
-            vz = NAN;
+            cu_just_hit = true;
+            std::cout<<"würfel unten links"<<std::endl;
+            cnx = -1;
+            cnz = -1;
+            cnx2 = cos((360-cu_a)* M_PI/180)*cnx - sin((360-cu_a)* M_PI/180)*cnz;
+            cnz2 = sin((360-cu_a)* M_PI/180)*cnx + cos((360-cu_a)* M_PI/180)*cnz;
+            cnx = cnx2;
+            cnz = cnz2;
+            alpha = acos((vx*cnx+vz*(cnz))/(sqrt(vx*vx+vz*vz)*sqrt(cnx*cnx + cnz*cnz)));
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
+            }
+            double vxneu = cos(alpha)*cnx-sin(alpha)*cnz;
+            double vzneu = sin(alpha)*cnx+cos(alpha)*cnz;
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*cnx - sin(2*M_PI-alpha)*cnz;
+                vzneu = sin(2*M_PI-alpha)*cnx + cos(2*M_PI-alpha)*cnz;
+            }
+            vx = vxneu;
+            vz = vzneu;
         }
 
          //Zusammenstoß mit Cylinder
@@ -451,17 +547,22 @@ void OGLWidget::paintGL()
             std::cout<<"zylinder"<<std::endl;
             cy_just_hit = true;
             schwerkraft = true;
-            double alpha = -135.0 * M_PI/180; //abprallwinkel immer 45° //umrechnung in radian notwendig!!
-            double vxneu = cos(alpha)*vx-sin(alpha)*vz;
-            double vzneu = sin(alpha)*vx+cos(alpha)*vz;
-            //zu viele nachkommastellen vermeiden
-            int vxxx = (vxneu*1000);
-            vxneu = vxxx/1000.0;
-            int vzzz = (vzneu*1000);
-            vzneu = vzzz/1000.0;
+            //Berechnung des Auftreffpunkts auf dem Cylinder
+            double apcx = ox + vx*0.5;
+            double apcz = oz + vz*0.5;
+            //Berechnung des Normalenvektors im Auftreffpunkt
+            double nax = apcx-cy_x;
+            double naz = apcz-cy_z;
+            //Berechnung des Einfallswinkels
+            double alpha = acos((vx*nax+vz*(naz))/(sqrt(vx*vx+vz*vz)*sqrt(nax*nax + naz*naz)));
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
+            }
+            //Drehen des Normalenvektors damit er der Aufallswinkel ist
+            double vxneu = cos(alpha)*nax-sin(alpha)*naz;
+            double vzneu = sin(alpha)*nax+cos(alpha)*naz;
             vx = vxneu;
             vz = vzneu;
-
         }
 
         //Punkte durch pinken Kreis
@@ -474,71 +575,111 @@ void OGLWidget::paintGL()
        }
 
         //bande rechts
-        double brxt = ((ox+vx*0.1)+0.5 - 0.5*3)/(0.5*10 - 0.5*3); //bande rechts x t-wert
-        double brzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande rechts z t-wert
-        if(aufStrecke(brxt, brzt)){ //prüft ob der nächste ortsvektor (mit berechnung durch richtungsvekoren) etwa auf der Strecke liegt
-            schwerkraft = false;
+       //Linker Referenzpunkt der Bande
+        double lrrx = 1.5;
+        double lrrz = 6.5;
+        //Rechter Referenzpunkt der Bande
+        double rrrx = 5;
+        double rrrz = 4.75;
+        //Abstand zur Rechten Bande
+        double drb = pointLineDistance(lrrx, lrrz, rrrx, rrrz, ox, oz);
+        //wenn der Abstand zur Bande weniger gleich 0.5 (Radius der Kugel) ist
+        //und die x-Koordinate der Kugel zwischen Anfang und Ende der Bande liegt
+        if(drb <= 0.5 && lrrx <= ox && ox <= rrrx){
+            schwerkraft = true;
             std::cout<<"bande rechts"<<std::endl;
-            ox = ox+vx*0.1;
-            oz = oz+vz*0.1;
-            //richtungsvektoren werden an bande angepasst, da ein abprallen nicht wirklich statt findet
-            //da die schwerkraft sie mehr nach unten zieht, als sie abprallen würden
-            vx = -(0.5*10 - 0.5*3)*0.5;
-            vz = -((0.5*14-0.75*3)-(0.5*14-0.5))*0.5;
-            //normalisieren der vektoren
-            laenge = sqrt((vx*vx + 0*0 + vz*vz));
-            if(laenge != 0){//normalisieren
-                vx = 1/laenge *vx;
-                vz = 1/laenge *vz;
+            double nx = (0.5-0.75*3);
+            double nz = -0.5*10+0.5*3;
+            alpha = acos((vx*nx+vz*(nz))/(sqrt(vx*vx+vz*vz)*sqrt(nx*nx + nz*nz)));
+            //winkel korrektur, da wir den normalenvektor eventuell nach links oder rechts um den winkel rotieren müssen
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
             }
+            //ausfallsvektor ist der normalenvektor um den korrigierten winkel gedreht
+            double vxneu = cos(2*M_PI-alpha)*nx - sin(2*M_PI-alpha)*nz;
+            double vzneu = sin(2*M_PI-alpha)*nx + cos(2*M_PI-alpha)*nz;
+            vx = vxneu;
+            vz = 0.5*vzneu;
         }
 
         //bande links
-        double blxt = ((ox+vx*0.1)-0.5 + 0.5*3)/(-0.5*10 + 0.5*3); //bande links x t-wert
-        double blzt = ((oz+vz*0.1)+0.5 - (0.5*14 - 0.5))/((0.5*14-0.75*3) - (0.5*14-0.5)); //bande links z t-wert
-        if(aufStrecke(blxt, blzt)){
+        //Linker Referenzpunkt der Bande
+         double llrx = -5;
+         double llrz = 4.75;
+         //Rechter Referenzpunkt der Bande
+         double rlrx = -1.5;
+         double rlrz = 6.5;
+         //Abstand zur Linken Bande
+         double dlb = pointLineDistance(llrx, llrz, rlrx, rlrz, ox, oz);
+         //wenn der Abstand zur Bande weniger gleich 0.5 (Radius der Kugel) ist
+         //und die x-Koordinate der Kugel zwischen Anfang und Ende der Bande liegt
+         if(dlb <= 0.5 && llrx <= ox && ox <= rlrx){
+            schwerkraft = true;
             std::cout<<"bande links"<<std::endl;
-            schwerkraft = false;
-            ox = ox+vx*0.1;
-            oz = oz+vz*0.1;
-            vx = -(-0.5*10 + 0.5*3)*0.5;
-            vz = -((0.5*14-0.75*3) - (0.5*14-0.5))*0.5;
-            laenge = sqrt((vx*vx + 0*0 + vz*vz));
-            if(laenge != 0){//normalisieren
-                vx = 1/laenge *vx;
-                vz = 1/laenge *vz;
+            double nx = -(0.5-0.75*3);
+            double nz = -0.5*10+0.5*3;
+            alpha = acos((vx*nx+vz*(nz))/(sqrt(vx*vx+vz*vz)*sqrt(nx*nx + nz*nz)));
+            //winkel korrektur, da wir den normalenvektor eventuell nach links oder rechts um den winkel rotieren müssen
+            if(alpha >= 0.5*M_PI){
+                alpha = (M_PI - alpha);
             }
-            std::cout<<"bande links getroffen "<<blxt<< " "<< blzt<<vx << " " <<vz<<std::endl;
+            //ausfallsvektor ist der normalenvektor um den korrigierten winkel gedreht
+            double vxneu = cos(alpha)*nx-sin(alpha)*nz;
+            double vzneu = sin(alpha)*nx+cos(alpha)*nz;
+            //falls der winkel alpha den normalenvektor in die falsche richtung verschiebt,
+            //so, dass der austrittswinkel etwa gleich der eintrittswinkel ist, obwohl der aufprallwinkel
+            //nicht 0° war
+            if(alpha != 0 && vx-0.01 <= -vxneu && -vxneu <= vx+0.01 && vz-0.01 <= -vzneu && -vzneu <= vz+0.01){
+                vxneu = cos(2*M_PI-alpha)*nx - sin(2*M_PI-alpha)*nz;
+                vzneu = sin(2*M_PI-alpha)*nx + cos(2*M_PI-alpha)*nz;
+            }
+            vx = vxneu;
+            vz = 0.5*vzneu;
         }
 
         //flipper arm
-        //berechnung der aktuellen normalen zum flipperarm
-        double nx = (-6)*cos((90+faa)*M_PI/180)-0.5*sin((90+faa)*M_PI/180);
-        double nz = (-6)*sin((90+faa)*M_PI/180)+0.5*cos((90+faa)*M_PI/180);
-
-        laenge = sqrt((nx*nx + 0*0 + nz*nz));
-        if(laenge != 0){ //normalisieren
-            nx = 1/laenge *nx;
-            nz = 1/laenge *nz;
+        //Dreh Referenzpunkt Flipperarm
+        double drfx = +1;
+        double drfz = 7;
+        //Linker Referenzpunkt Flipperarm in Abhängigkeit zum Drehpunkt
+        double lrfx = -2.5;
+        double lrfz = 0;
+        //Rechter Referenzpunkt Flipperarm in Abhängigkeit zum Drehpunkt
+        double rrfx = +0.5;
+        double rrfz = -0.5;
+        //Berechnen der gedrehten absoluten Referenzpunkte
+        double lrfxx = drfx + lrfx*cos(faa*M_PI/180)-lrfz*sin(faa*M_PI/180);
+        double lrfzz = drfz - lrfx*sin(faa*M_PI/180)+lrfz*cos(faa*M_PI/180);
+        lrfx = lrfxx;
+        lrfz = lrfzz;
+        double rrfxx = drfx + rrfx;
+        double rrfzz = drfz + rrfz;
+        rrfx = rrfxx;
+        rrfz = rrfzz;
+        //Berechnen des gedrehten Normalenvektors
+        double nx = lrfx-rrfx;
+        double nz = lrfz-rrfz;
+        double nrx = -(cos(270*M_PI/180)*nx-sin(270*M_PI/180)*nz);
+        double nrz = -(sin(270*M_PI/180)*nx+cos(270*M_PI/180)*nz);
+        laenge = sqrt((nrx*nrx + 0*0 + nrz*nrz));
+        //Abstand
+        double df = pointLineDistance(lrfx, lrfz, rrfx, rrfz, ox, oz);
+        if(df >= 1){
+            fl_just_hit = false;
         }
-        //abstand von flipperarm zur kugel
-        double d = (nx*(ox+vx*0.1)+nz*(oz+vz*0.1)+7)/laenge;
-        //paxt und pazt um zu prüfen, ob die kugel sich auch wirklich auf dem arm und nicht davor oder dahinterbefindet
-        double paxt = ((ox+vx*0.1) - 3)/((-6)*cos(faa*M_PI/180)-0.5*sin(faa*M_PI/180));
-        double pazt = ((oz+vz*0.1)+0.5 - 6.5)/((-6)*sin(faa*M_PI/180)+0.5*cos(faa*M_PI/180));
-        //dazu müssen paxt und pazt jeweils zwischen 0 und 1 sein
-        //der abstand muss weniger gleich 0.2 sein (nicht weniger gleich 0, weil es dann schon zu spät ist)
-        if(d <= 0.2 && paxt <= 1 && paxt >= 0 && pazt <= 1 && pazt >= 0 ){
+        if(df <= 0.5&& !fl_just_hit){
+            fl_just_hit = true;
             std::cout<<"flipperarm"<<std::endl;
             schwerkraft = false;
             if(!up){//wenn der flipperarm unten ist
                 //kugel runter rollen
+                std::cout<<"!up"<<std::endl;
                 vx = (-6)*cos(faa*M_PI/180)-0.5*sin(faa*M_PI/180);
                 vz = (-6)*sin(faa*M_PI/180)+0.5*cos(faa*M_PI/180);
             }else{
                 //abprallen in richtung des aktuellen normalenvektors
-                vx = nx;
-                vz = nz;
+                vx = nrx;
+                vz = nrz;
                 schwerkraft = true;
             }
             laenge = sqrt((vx*vx + 0*0 + vz*vz));
@@ -546,6 +687,7 @@ void OGLWidget::paintGL()
                 vx = 1/laenge *vx;
                 vz = 1/laenge *vz;
             }
+            std::cout<<vx<<" "<<vz<<std::endl;
         }
 
         //kollision mit dem kleinen teil der linken bande
@@ -562,21 +704,51 @@ void OGLWidget::paintGL()
         }
 
         //wand
-        double abstandzwand = oz - wandz;
-        double abstandxwand = ox - wandx;
-        abstandxwand = sqrt(abstandxwand*abstandxwand); //bei dem x-abstand ist die richtung (- oder + unwichtig)
-        //wenn der x-abstand zur wand kleiner gleich 0.5 und der z-abstand zwischen -0.6 und -0.65 ist
-        if(abstandzwand <= -0.6 && -0.65 <= abstandzwand && abstandxwand <= 0.5){
-            schwerkraft = false;
+        //Ecke Wand Oben Rechts
+        double eworx = wandx+1;
+        double eworz = wandz-0.1;
+        //Ecke Wand Oben Links
+        double ewolx = wandx-1;
+        double ewolz = wandz-0.1;
+        //Ecke Wand Unten Links
+        double ewulx = wandx-1;
+        double ewulz = wandz+0.1;
+        //Ecke Wand Unten Rechts
+        double ewurx = wandx+1;
+        double ewurz = wandz+0.1;
+
+        //Abstand zu Oben
+        double dao = pointLineDistance(eworx, eworz, ewolx, ewolz, ox, oz);
+        //Abstand zu Unten
+        double dau = pointLineDistance(ewulx, ewulz, ewurx, ewurz, ox, oz);
+        //Abstand zu Rechts
+        double dar = pointLineDistance(ewurx, ewurz, eworx, eworz, ox, oz);
+        //Abstand zu Links
+        double dal = pointLineDistance(ewolx, ewolz, ewulx, ewulz, ox, oz);
+        //Zusammenstoß von Oben
+        if(dao <= 0.5 && dar <= 2 && dal <= 2){
+            schwerkraft = true;
             std::cout<<"wand von oben"<<std::endl;
-            vz = 0; //ball bleibt auf wand liegen
-            vx = wandr;
+            vz = -0.5;
         }
-        if(abstandzwand <= 0.6 && 0.65 <= abstandzwand && abstandxwand <= 0.5){ //zusammenstoß von unten
+        //Unten
+        if(dau <= 0.5 && dar <= 2 && dal <= 2){
+            schwerkraft = true;
             std::cout<<"wand von unten"<<std::endl;
             vz = 1; //ball prallt nach unten ab, dabei bleibt die x-richtung bestehend, deshalb einfallswinkel = aufallswinkel
         }
-
+        //Rechts
+        if(dar <= 0.5 && dau <= 0.1 && dao <= 0.1){
+            schwerkraft = true;
+            std::cout<<"wand von rechts"<<std::endl;
+            vx = 1;
+        }
+        //Links
+        if(dal <= 0.5 && dau <= 0.1 && dao <= 0.1){
+            schwerkraft = true;
+            std::cout<<"wand von links"<<std::endl;
+            vx = -1;
+        }
 
         laenge = sqrt((vx*vx + 0*0 + vz*vz));
         if(laenge != 0){//normalisieren
@@ -595,91 +767,7 @@ void OGLWidget::paintGL()
     update();
 }
 
-//diese funktion kontrolliert, anhand der berechneten t-werte (oder lambda) durch das umstellen einer funktion,
-//ob der punkt auf der strecke liegt
-boolean OGLWidget::aufStrecke(float xt, float zt){
-    boolean aufstrecke = false;
-    //da die werte nur auf eine nachkommastellen übereinstimmen müssen, da wir sonst nie auf ein ergebnis kommen
-    xt = (float)((int)(xt*100))/100;
-    zt = (float)((int)(zt*100))/100;
-    if(xt <= 1.1 && xt >= -0.1){ //die t-werte müssen zwischen 1 und 0 sein
-        aufstrecke = true;
-    }else{
-        return false;
-    }
-    if(xt == zt){ //wenn die werte gleich sind
-        return true && aufstrecke;
-    }
-    int xrest1 = (xt*10);
-    int zrest1 = (zt*10);
-    int xrest = (xt - (float)((int)(xt*10))/10)*100;
-    int zrest = (zt - (float)((int)(zt*10))/10)*100;
-    if(xrest1 == zrest1){ //wenn zweite stelle gleich ist
-        return closeTo(xrest, zrest) && aufstrecke; //überprüfen auf mögliche rundung
-    }
-    if(closeTo(xrest1,zrest1)){ //sekundäreüberprüfung aufmögliche rundung
-        if(xrest == 0 && (zrest == 9 || zrest == 8)){
-            return true && aufstrecke;
-        }else if( zrest == 0 && (xrest == 9 || xrest == 8)){
-            return true && aufstrecke;
-        }else if(xrest == 1 && zrest == 9){
-            return true && aufstrecke;
-        }else if(zrest == 1 && xrest == 9){
-            return true && aufstrecke;
-        }else if(xrest == 0 && zrest == 0){
-            return true && aufstrecke;
-        }
-    }
-    return false;
-}
 
-//überprüft ob die ziffern i und j möglich zu runden sind
-//hier gelten nur ungefähre maßstäbe wie 1 ist in der nähe von 3
-boolean OGLWidget::closeTo(int i, int j){ // i und j sind ziffern
-    switch(i){
-    case 0: if(j == 1){
-            return true;
-            }
-            break;
-    case 1: if(j == 0 || j == 2 || j == 3){
-            return true;
-            }
-            break;
-    case 2: if(j == 0 || j == 1 || j == 3 || j == 4){
-            return true;
-            }
-            break;
-    case 3: if(j == 1 || j == 2 || j == 4 || j == 5){
-            return true;
-            }
-            break;
-    case 4: if(j == 2 || j == 3 || j == 5 || j == 6){
-            return true;
-            }
-            break;
-    case 5: if(j == 3 || j == 4 || j == 6 || j == 7){
-            return true;
-            }
-            break;
-    case 6: if(j == 4 || j == 5 || j == 7 || j == 8){
-            return true;
-            }
-            break;
-    case 7: if(j == 5 || j == 6 || j == 8 || j == 9){
-            return true;
-            }
-            break;
-    case 8: if(j == 6 || j == 7 || j == 9){
-            return true;
-            }
-            break;
-    case 9: if(j == 7 || j == 8){
-            return true;
-            }
-            break;
-    }
-    return false;
-}
 
 void OGLWidget::resizeGL(int w, int h)
 {
@@ -832,30 +920,30 @@ void OGLWidget::paintFlipperArm(float w, float l, float h){
 }
 
 void OGLWidget::paintTable(float w, float h, float a){//w = weite, h = hoehe, a = weite des flipperArms
-    glColor3f(1,1,1);
+    glColor3f(2,4,7);
     //textur der katze auf die Tischplatte legen
     //um spiel schneller laufen zu lassen, diesen Teil auskommentieren
-    QOpenGLTexture texture( QImage(":/pictures/kitten.png").mirrored() );
+    /**QOpenGLTexture texture( QImage(":/pictures/kitten.png").mirrored() );
     texture.setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture.setMagnificationFilter(QOpenGLTexture::Linear);
     float maxtexcoord = 1;
-    texture.bind();
-
+    texture.bind();**/
+    glColor3f(0,0,1);
     glBegin(GL_QUADS);
-     glNormal3f(0,1,0);
-        glTexCoord2f(0,0);
+        glNormal3f(0,1,0);
+        //glTexCoord2f(0,0);
         glVertex3f(0.5*w, 0, 0.5*h);
 
-        glTexCoord2f(maxtexcoord,0);
+        //glTexCoord2f(maxtexcoord,0);
 
         glVertex3f(-0.5*w, 0, 0.5*h);
 
 
-        glTexCoord2f(maxtexcoord,maxtexcoord);
+        //glTexCoord2f(maxtexcoord,maxtexcoord);
 
         glVertex3f(-0.5*w, 0, -0.5*h);
 
-        glTexCoord2f(0,maxtexcoord);
+        //glTexCoord2f(0,maxtexcoord);
         glVertex3f(0.5*w, 0, -0.5*h);
     glEnd();
     /**glBegin(GL_QUADS); //Tischplatte
@@ -894,8 +982,8 @@ void OGLWidget::paintTable(float w, float h, float a){//w = weite, h = hoehe, a 
         glVertex3f(-0.5*w, 0.5, -0.5*h);
         glVertex3f(0.5*w, 0.5, -0.5*h);
     glEnd();
-    glBegin(GL_QUADS);
-        glNormal3f(0.5-0.75*a,0,-0.5*w+0.5*a);
+    glBegin(GL_QUADS);//rechte Bande
+        glNormal3f((0.5-0.75*a),0,-0.5*w+0.5*a);
         glVertex3f(0.5*a,0,0.5*h-0.5);
         glVertex3f(0.5*a,0.5,0.5*h-0.5);
         glVertex3f(0.5*w,0.5,0.5*h-0.75*a);
@@ -908,8 +996,8 @@ void OGLWidget::paintTable(float w, float h, float a){//w = weite, h = hoehe, a 
         glVertex3f(0.5*w,0.5,0.5*h);
         glVertex3f(0.5*w,0.5,0.5*h-0.75*a);
      glEnd();
-     glBegin(GL_QUADS);
-        glNormal3f(0.5-0.75*a,0,0.5*w+0.5*a);
+     glBegin(GL_QUADS);//linke Bande
+        glNormal3f(-(0.5-0.75*a),0,-0.5*w+0.5*a);
          glVertex3f(-0.5*a,0,0.5*h-0.5);
          glVertex3f(-0.5*a,0.5,0.5*h-0.5);
          glVertex3f(-0.5*w,0.5,0.5*h-0.75*a);
@@ -1148,4 +1236,19 @@ void OGLWidget::paintWall(double h, double w, float x, float z){
         glVertex3f(0.5*w,0.5,0.5*h);
     glEnd();
     glTranslatef(-x,0,-z);
+}
+
+double OGLWidget::pointLineDistance(double x1, double z1, double x2, double z2, double px, double pz){
+    //zweite koordinate relativ zur ersten
+    x2 -= x1;
+    z2 -= z1;
+
+    px -= x1;
+    pz -= z1;
+
+    double dot = px * x2 + pz * z2;
+    double pro = dot * dot/ (x2 * x2 + z2 * z2);
+    double length = px * px + pz * pz - pro;
+    length = sqrt(length*length);
+    return length;
 }
